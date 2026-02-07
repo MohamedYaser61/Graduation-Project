@@ -19,7 +19,7 @@ async function connectDB() {
     });
 
     if (env.NODE_ENV !== 'test') {
-      console.log(`MongoDB connected: ${mongoose.connection.host}`);
+      console.log(`MongoDB connected: ${mongoose.connection.name}`);
     }
   } catch (err) {
     console.error('MongoDB connection failed:', err.message);

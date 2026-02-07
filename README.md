@@ -13,6 +13,7 @@ A backend API for a life-saving donation platform—connecting donors, hospitals
 - [Scripts](#scripts)
 - [Environment Variables](#environment-variables)
 - [Project Structure](#project-structure)
+- [Utils: JWT & Response](#utils-jwt--response)
 - [Current Status](#current-status)
 - [Next Steps](#next-steps)
 
@@ -41,7 +42,7 @@ A backend API for a life-saving donation platform—connecting donors, hospitals
   - **services** – auth, matching, donation, reward, notification (placeholders)
   - **routes** – auth, donor, hospital, admin (placeholders)
   - **middlewares** – auth, role, error (placeholders)
-  - **utils** – jwt, geo, response (placeholders)
+  - **utils** – jwt, response (implemented); geo (placeholder)
   - **app.js** – Express app
   - **server.js** – entry point that starts the server
 
@@ -72,7 +73,23 @@ A backend API for a life-saving donation platform—connecting donors, hospitals
   - Starts the HTTP server on `env.PORT` (default 3000).
   - This is the **only entry point** for running the app (`npm start` and `npm run dev` both use it).
 
-### 4. Repo hygiene
+### 4. Utils (JWT & response)
+
+- **`src/utils/jwt.js`**
+  - **`signToken(payload, options?)`** – Signs a JWT with `env.JWT_SECRET` and default `env.JWT_EXPIRES_IN`; optional `options.expiresIn` override.
+  - **`signRefreshToken(payload)`** – Signs a refresh token using `env.JWT_REFRESH_EXPIRES_IN`.
+  - **`verifyToken(token)`** – Verifies a JWT and returns the decoded payload; throws if token is missing, invalid, or expired.
+  - Re-exports **`TokenExpiredError`** and **`JsonWebTokenError`** so middleware can return distinct messages (e.g. “Token expired” vs “Invalid token”).
+  - All JWT config and logic live here; controllers and middleware use these functions instead of calling `jsonwebtoken` directly.
+
+- **`src/utils/response.js`**
+  - **`successResponse(res, statusCode, message, data?)`** – Sends `{ success: true, message, data? }` with the given status code.
+  - **`errorResponse(res, statusCode, message)`** – Sends `{ success: false, message }` with the given status code.
+  - Ensures a **consistent API response shape** so the frontend can rely on the same structure for every JSON success and error.
+
+Detailed docs (mental model, flow diagrams, usage examples, anti-patterns, auth vs authorization): **`src/utils/README.md`**.
+
+### 5. Repo hygiene
 
 - **`.env.example`** – template with all supported env vars and example values.
 - **`.gitignore`** – ignores `node_modules/`, `.env`, `.env.local`, `*.log`, `.DS_Store` so secrets and noise are not committed.
@@ -204,10 +221,11 @@ LifeLink/
 │   │   ├── auth.middleware.js
 │   │   ├── role.middleware.js
 │   │   └── error.middleware.js
-│   ├── utils/             # Helpers (placeholders)
-│   │   ├── jwt.js
-│   │   ├── geo.js
-│   │   └── response.js
+│   ├── utils/             # Helpers
+│   │   ├── jwt.js         # JWT sign/verify (done)
+│   │   ├── response.js    # successResponse / errorResponse (done)
+│   │   ├── geo.js         # (placeholder)
+│   │   └── README.md      # Utils guide: JWT, response, flows, examples
 │   ├── app.js             # Express app + middleware + /health (done)
 │   └── server.js          # Entry: validateEnv → connectDB → listen (done)
 ├── .env.example           # Env template (done)
@@ -215,6 +233,25 @@ LifeLink/
 ├── package.json
 └── README.md              # This file
 ```
+
+---
+
+## Utils: JWT & Response
+
+Two utility modules are implemented for production use:
+
+| Utility | Purpose |
+|--------|---------|
+| **`utils/jwt.js`** | Centralizes JWT signing and verification. Use `signToken` / `signRefreshToken` after login; use `verifyToken` in auth middleware. Uses `env.JWT_SECRET` and `env.JWT_EXPIRES_IN` (no hardcoded secrets). |
+| **`utils/response.js`** | Centralizes API response shape. Use `successResponse(res, status, message, data?)` and `errorResponse(res, status, message)` in controllers so every JSON response has the same structure (`success`, `message`, optional `data`). |
+
+**Quick usage**
+
+- **Login (controller):** `const token = signToken({ userId: user._id, role: user.role });` then `successResponse(res, 200, 'Logged in', { token })`.
+- **Protected route (middleware):** `const decoded = verifyToken(bearerToken); req.user = decoded; next();` — catch `TokenExpiredError` / `JsonWebTokenError` and return `errorResponse(res, 401, '...')`.
+- **Any controller:** `successResponse(res, 200, 'Ok', data)` or `errorResponse(res, 404, 'Not found')`.
+
+For full details (why centralize, flow diagrams, examples, anti-patterns, authentication vs authorization), see **`src/utils/README.md`**.
 
 ---
 
@@ -230,10 +267,10 @@ LifeLink/
 | Services          | Placeholder | Files exist; no logic |
 | Routes            | Placeholder | Files exist; not mounted in `app.js` |
 | Middlewares       | Placeholder | Files exist; not used yet |
-| Utils             | Placeholder | Files exist; no helpers yet |
+| Utils             | Partial     | `jwt.js` and `response.js` implemented; `geo.js` placeholder |
 | Tests             | None   | `npm test` is a placeholder |
 
-So right now the project **runs**, validates env, optionally connects to MongoDB, and exposes **GET /health**. Everything else is prepared as empty files for the team to implement.
+So right now the project **runs**, validates env, optionally connects to MongoDB, exposes **GET /health**, and provides **JWT** and **response** utilities ready for auth and API routes. Models, controllers, services, routes, and middlewares are prepared as empty or placeholder files for the team to implement.
 
 ---
 
@@ -242,7 +279,7 @@ So right now the project **runs**, validates env, optionally connects to MongoDB
 Suggested order for the team:
 
 1. **Models** – Define Mongoose schemas in `models/` (User, Donor, Hospital, Request, Donation, Notification).
-2. **Utils** – Implement `utils/jwt.js`, `utils/response.js`, and `utils/geo.js` as needed.
+2. **Utils** – `jwt.js` and `response.js` are done; implement `utils/geo.js` when needed for location/distance.
 3. **Middlewares** – Implement `auth.middleware.js`, `role.middleware.js`, and `error.middleware.js`; then plug them into `app.js`.
 4. **Auth** – Implement `auth.service.js` and `auth.controller.js`, then mount `auth.routes.js` under `API_PREFIX` in `app.js`.
 5. **Rest of API** – Implement donor, hospital, and admin routes/services/controllers and mount their routes.

@@ -117,7 +117,7 @@ After this: signup and login work, `/api/auth/*` is under API prefix, errors are
 
 ## 4. Quick reference – what to do first
 
-1. Implement **utils/jwt.js** and **utils/response.js**.
+1. Implement **utils/jwt.js** and **utils/response.js**.  -- Done
 2. Implement **services/auth.service.js** and **controllers/auth.controller.js**.
 3. Fix **routes/auth.routes.js** (import controller handlers; fix duplicate route).
 4. Mount auth routes in **app.js** with `API_PREFIX + '/auth'`.

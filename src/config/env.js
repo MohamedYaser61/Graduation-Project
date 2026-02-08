@@ -17,6 +17,9 @@ const env = {
   // App
   API_PREFIX: process.env.API_PREFIX || '/api',
   CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
+
+  // Bcrypt
+  BCRYPT_SALT_ROUNDS: parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10,
 };
 
 const required = ['MONGODB_URI', 'JWT_SECRET'];

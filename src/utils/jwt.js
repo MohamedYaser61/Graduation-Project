@@ -54,7 +54,7 @@ export function signRefreshToken(payload) {
  * @throws {jwt.TokenExpiredError} If the token has expired.
  * @throws {jwt.JsonWebTokenError} If the token is invalid or malformed.
  */
-export function verifyToken(token) {
+export function verifyToken(token) {  
   if (token == null || typeof token !== 'string') {
     throw new Error('Token is required and must be a non-empty string.');
   }

@@ -33,18 +33,18 @@ A backend API for a life-saving donation platform—connecting donors, hospitals
 
 ## What We've Done So Far
 
-### 1. Project skeleton
+### 1. Project Architecture & Setup ✅
 
-- Created the full folder structure under `src/`:
-  - **config** – environment and database
-  - **models** – User, Donor, Hospital, Request, Donation, Notification (files are placeholders)
-  - **controllers** – auth, donor, hospital, admin (placeholders)
-  - **services** – auth, matching, donation, reward, notification (placeholders)
-  - **routes** – auth, donor, hospital, admin (placeholders)
-  - **middlewares** – auth, role, error (placeholders)
-  - **utils** – jwt, response (implemented); geo (placeholder)
-  - **app.js** – Express app
-  - **server.js** – entry point that starts the server
+- **Complete folder structure** under `src/` organized by domain:
+  - **config** – environment validation and MongoDB connection
+  - **models** – User, Donor, Hospital (complete with Mongoose discriminators)
+  - **controllers** – auth (complete), donor/hospital/admin (route protection ready)
+  - **services** – auth (complete), others pending
+  - **routes** – auth, donor, hospital, admin (all wired with protection)
+  - **middlewares** – auth, role, error (all implemented)
+  - **utils** – jwt, response (complete); geo (pending)
+  - **app.js** – Express app with all middleware and routes
+  - **server.js** – entry point with graceful startup
 
 ### 2. Environment & config
 
@@ -89,16 +89,40 @@ A backend API for a life-saving donation platform—connecting donors, hospitals
 
 Detailed docs (mental model, flow diagrams, usage examples, anti-patterns, auth vs authorization): **`src/utils/README.md`**.
 
-### 5. Auth system (Models, Service, Controller, Routes) ✅ **Implemented**
+### 5. Complete Authentication System ✅
 
-- **`src/models/User.model.js`** – Complete schema with fullName, email, password (with bcrypt), role (admin/donor/hospital), and timestamps. Uses Mongoose discriminators for role-based inheritance.
-- **`src/models/Donor.model.js`** – Extends User model with donor-specific fields: phoneNumber, bloodType (A+, A-, B+, B-, AB+, AB-, O+, O-), gender, lastDonationDate, isAvailable, location (city, governrate).
-- **`src/models/Hospital.model.js`** – Extends User model with hospital-specific fields: hospitalName, hospitalId, licenseNumber, address, contactNumber.
-- **`src/services/auth.service.js`** – Implements: register, login, logout, refreshToken, forgotPassword, resetPassword, getMe, verifyEmail, verifyEmailToken. Includes bcrypt password hashing and JWT token generation.
-- **`src/controllers/auth.controller.js`** – Handles: signup, login, logout, refreshToken, forgotPassword, resetPassword, getMe, verifyEmail, verifyEmailToken. Uses auth service and response utilities.
-- **`src/routes/auth.routes.js`** – Mounted at `/auth` in app.js with all auth endpoints (POST /signup, /login, /logout, /refresh-token, /forgot-password, /reset-password, GET /me, /verify-email, /verify-email-token).
+**Models:**
+- **`User.model.js`** – Base schema with fullName, email, password (bcrypt hashed), role (admin/donor/hospital), timestamps. Uses Mongoose discriminators for inheritance.
+- **`Donor.model.js`** – Extends User with phoneNumber, bloodType (8 types), gender, lastDonationDate, isAvailable, location (city, governorate).
+- **`Hospital.model.js`** – Extends User with hospitalName, hospitalId, licenseNumber, address, contactNumber.
 
-### 6. Repo hygiene
+**Service Layer:**
+- **`auth.service.js`** – Business logic for: register, login, logout, refreshToken, forgotPassword, resetPassword, getMe, verifyEmail, verifyEmailToken. Handles password hashing and JWT generation.
+
+**Controller & Routes:**
+- **`auth.controller.js`** – Request handlers for all auth operations with proper error handling.
+- **`auth.routes.js`** – Mounted at `/auth` with endpoints:
+  - POST: `/signup`, `/login`, `/logout`, `/refresh-token`, `/forgot-password`, `/reset-password`
+  - GET: `/me` (protected), `/verify-email`, `/verify-email-token`
+
+### 6. Security & Protection Layer ✅
+
+**Middlewares:**
+- **`auth.middleware.js`** – JWT verification from `Authorization: Bearer <token>` header. Attaches `req.user` with decoded payload. Returns 401 for missing/invalid/expired tokens.
+- **`role.middleware.js`** – Role-based authorization factory `requireRole(role)`. Checks `req.user.role` against required role. Returns 403 for unauthorized access.
+- **`error.middleware.js`** – Global error handler that:
+  - Catches all errors and returns consistent JSON format
+  - Maps JWT errors (expired/invalid) to 401
+  - Handles Mongoose validation errors with field details
+  - Handles duplicate key errors (MongoDB 11000)
+  - Prevents internal error leakage in production
+
+**Protected Route Groups:**
+- **`donor.routes.js`** – Mounted at `/donor` with auth + donor role protection. Placeholder `/profile` endpoint ready.
+- **`hospital.routes.js`** – Mounted at `/hospital` with auth + hospital role protection. Placeholder `/profile` endpoint ready.
+- **`admin.routes.js`** – Mounted at `/admin` with auth + admin role protection. Placeholder `/profile` endpoint ready.
+
+### 7. Repository Management
 
 - **`.env.example`** – template with all supported env vars and example values.
 - **`.gitignore`** – ignores `node_modules/`, `.env`, `.env.local`, `*.log`, `.DS_Store` so secrets and noise are not committed.
@@ -201,47 +225,53 @@ For `npm run dev` you need **nodemon** (e.g. `npm install -D nodemon`).
 LifeLink/
 ├── src/
 │   ├── config/
-│   │   ├── db.js          # MongoDB connect / disconnect (done)
-│   │   └── env.js         # Env loading and validation (done)
-│   ├── models/            # Mongoose models (placeholders)
-│   │   ├── User.js
-│   │   ├── Donor.js
-│   │   ├── Hospital.js
-│   │   ├── Request.js
-│   │   ├── Donation.js
-│   │   └── Notification.js
-│   ├── controllers/       # Route handlers (placeholders)
-│   │   ├── auth.controller.js
-│   │   ├── donor.controller.js
-│   │   ├── hospital.controller.js
-│   │   └── admin.controller.js
-│   ├── services/          # Business logic (placeholders)
-│   │   ├── auth.service.js
-│   │   ├── matching.service.js
-│   │   ├── donation.service.js
-│   │   ├── reward.service.js
-│   │   └── notification.service.js
-│   ├── routes/            # Express routers (placeholders)
-│   │   ├── auth.routes.js
-│   │   ├── donor.routes.js
-│   │   ├── hospital.routes.js
-│   │   └── admin.routes.js
-│   ├── middlewares/       # Auth, roles, error handling (placeholders)
-│   │   ├── auth.middleware.js
-│   │   ├── role.middleware.js
-│   │   └── error.middleware.js
-│   ├── utils/             # Helpers
-│   │   ├── jwt.js         # JWT sign/verify (done)
-│   │   ├── response.js    # successResponse / errorResponse (done)
-│   │   ├── geo.js         # (placeholder)
-│   │   └── README.md      # Utils guide: JWT, response, flows, examples
-│   ├── app.js             # Express app + middleware + /health (done)
-│   └── server.js          # Entry: validateEnv → connectDB → listen (done)
-├── .env.example           # Env template (done)
-├── .gitignore             # Ignore .env, node_modules, etc. (done)
-├── package.json
-└── README.md              # This file
+│   │   ├── db.js                    # ✅ MongoDB connect/disconnect with dev fallback
+│   │   └── env.js                   # ✅ Env validation and loading
+│   ├── models/
+│   │   ├── User.model.js            # ✅ Base user model with discriminators
+│   │   ├── Donor.model.js           # ✅ Donor-specific fields (bloodType, location, etc.)
+│   │   ├── Hospital.model.js        # ✅ Hospital-specific fields
+│   │   ├── Request.model.js         # 🔴 Pending - Blood/organ donation requests
+│   │   ├── Donation.model.js        # 🔴 Pending - Donation records
+│   │   └── Notification.model.js    # 🔴 Pending - User notifications
+│   ├── controllers/
+│   │   ├── auth.controller.js       # ✅ Complete auth request handlers
+│   │   ├── donor.controller.js      # 🔴 Pending - Donor features
+│   │   ├── hospital.controller.js   # 🔴 Pending - Hospital features
+│   │   └── admin.controller.js      # 🔴 Pending - Admin features
+│   ├── services/
+│   │   ├── auth.service.js          # ✅ Complete auth business logic
+│   │   ├── matching.service.js      # 🔴 Pending - Donor-request matching
+│   │   ├── donation.service.js      # 🔴 Pending - Donation management
+│   │   ├── reward.service.js        # 🔴 Pending - Donor rewards/gamification
+│   │   └── notification.service.js  # 🔴 Pending - Notification system
+│   ├── routes/
+│   │   ├── auth.routes.js           # ✅ All auth endpoints (9 routes)
+│   │   ├── donor.routes.js          # ✅ Protected route group ready
+│   │   ├── hospital.routes.js       # ✅ Protected route group ready
+│   │   └── admin.routes.js          # ✅ Protected route group ready
+│   ├── middlewares/
+│   │   ├── auth.middleware.js       # ✅ JWT verification middleware
+│   │   ├── role.middleware.js       # ✅ Role-based access control
+│   │   └── error.middleware.js      # ✅ Global error handler
+│   ├── utils/
+│   │   ├── jwt.js                   # ✅ JWT signing and verification
+│   │   ├── response.js              # ✅ Consistent API responses
+│   │   ├── geo.js                   # 🔴 Pending - Location utilities
+│   │   └── README.md                # ✅ Utils documentation
+│   ├── app.js                       # ✅ Express app with all routes/middleware
+│   └── server.js                    # ✅ Entry point with env validation
+├── .env.example                     # ✅ Environment template
+├── .gitignore                       # ✅ Git ignore rules
+├── package.json                     # ✅ Dependencies and scripts
+├── README.md                        # ✅ This file
+├── PROJECT_STATUS.md                # ✅ Detailed development status
+└── PHASES_DOCUMENTATION.md          # ✅ Phase 1 implementation guide
 ```
+
+**Legend:**
+- ✅ Complete and production-ready
+- 🔴 Pending implementation (structure in place)
 
 ---
 
@@ -261,39 +291,3 @@ Two utility modules are implemented for production use:
 - **Any controller:** `successResponse(res, 200, 'Ok', data)` or `errorResponse(res, 404, 'Not found')`.
 
 For full details (why centralize, flow diagrams, examples, anti-patterns, authentication vs authorization), see **`src/utils/README.md`**.
-
----
-
-## Current Status
-
-| Area              | Status | Notes |
-|-------------------|--------|--------|
-| Config (env, db)  | ✅ Done   | Env validation, DB connect/disconnect, dev fallback without DB |
-| App bootstrap     | ✅ Done   | Express app, CORS, morgan, JSON, `/health` route |
-| Server entry      | ✅ Done   | `server.js` is the single entry point |
-| **Auth System**   | ✅ **Done** | **User, Donor, Hospital models** + **Auth service** + **Auth controller** + **Auth routes** (full signup/login/refresh/password flow) |
-| Utils             | ✅ Done     | `jwt.js` and `response.js` fully implemented; `geo.js` placeholder |
-| Middlewares       | 🔴 Placeholder | `auth.middleware.js`, `role.middleware.js`, `error.middleware.js` – not yet implemented |
-| Models            | 🟡 Partial | User, Donor, Hospital done; Request, Donation, Notification empty |
-| Controllers       | 🟡 Partial | Auth done; Donor, Hospital, Admin controllers empty |
-| Services          | 🔴 Placeholder | Matching, Donation, Reward, Notification services empty |
-| Routes            | 🟡 Partial | Auth routes done and mounted; Donor, Hospital, Admin routes empty |
-| Tests             | None   | `npm test` is a placeholder |
-
-The project **runs**, connects to MongoDB, validates auth, and has a **working signup/login system** with user roles (donor, hospital, admin). Auth routes are fully functional. Next priorities: implement middlewares, complete remaining models, and build donor/hospital/admin features.
-
----
-
-## Next Steps
-
-Suggested order for the team:
-
-1. **Middlewares** – Implement `auth.middleware.js` (verify JWT from Authorization header), `role.middleware.js` (check user role), and `error.middleware.js` (centralized error handler); then plug them into `app.js`.
-2. **Remaining Models** – Complete `Request.model.js`, `Donation.model.js`, `Notification.model.js` with full schemas and relationships.
-3. **Donor/Hospital Controllers & Routes** – Implement `donor.controller.js`, `hospital.controller.js` and their routes; mount under `/donor` and `/hospital` with auth middleware.
-4. **Services** – Implement `matching.service.js`, `donation.service.js`, `reward.service.js`, `notification.service.js` for business logic.
-5. **Admin Controller & Routes** – Implement `admin.controller.js` for user/request/donation management; mount under `/admin` with auth + `requireRole('admin')` middleware.
-6. **Utils** – Implement `geo.js` for location-based matching and distance calculations.
-7. **Tests** – Add test suite (auth, endpoints, services, error handling).
-
-

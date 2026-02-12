@@ -89,7 +89,16 @@ A backend API for a life-saving donation platform—connecting donors, hospitals
 
 Detailed docs (mental model, flow diagrams, usage examples, anti-patterns, auth vs authorization): **`src/utils/README.md`**.
 
-### 5. Repo hygiene
+### 5. Auth system (Models, Service, Controller, Routes) ✅ **Implemented**
+
+- **`src/models/User.model.js`** – Complete schema with fullName, email, password (with bcrypt), role (admin/donor/hospital), and timestamps. Uses Mongoose discriminators for role-based inheritance.
+- **`src/models/Donor.model.js`** – Extends User model with donor-specific fields: phoneNumber, bloodType (A+, A-, B+, B-, AB+, AB-, O+, O-), gender, lastDonationDate, isAvailable, location (city, governrate).
+- **`src/models/Hospital.model.js`** – Extends User model with hospital-specific fields: hospitalName, hospitalId, licenseNumber, address, contactNumber.
+- **`src/services/auth.service.js`** – Implements: register, login, logout, refreshToken, forgotPassword, resetPassword, getMe, verifyEmail, verifyEmailToken. Includes bcrypt password hashing and JWT token generation.
+- **`src/controllers/auth.controller.js`** – Handles: signup, login, logout, refreshToken, forgotPassword, resetPassword, getMe, verifyEmail, verifyEmailToken. Uses auth service and response utilities.
+- **`src/routes/auth.routes.js`** – Mounted at `/auth` in app.js with all auth endpoints (POST /signup, /login, /logout, /refresh-token, /forgot-password, /reset-password, GET /me, /verify-email, /verify-email-token).
+
+### 6. Repo hygiene
 
 - **`.env.example`** – template with all supported env vars and example values.
 - **`.gitignore`** – ignores `node_modules/`, `.env`, `.env.local`, `*.log`, `.DS_Store` so secrets and noise are not committed.
@@ -259,18 +268,19 @@ For full details (why centralize, flow diagrams, examples, anti-patterns, authen
 
 | Area              | Status | Notes |
 |-------------------|--------|--------|
-| Config (env, db)  | Done   | Env validation, DB connect/disconnect, dev fallback without DB |
-| App bootstrap     | Done   | Express app, CORS, morgan, JSON, `/health` |
-| Server entry      | Done   | `server.js` is the single entry point |
-| Models            | Placeholder | Files exist; no schemas yet |
-| Controllers       | Placeholder | Files exist; no logic |
-| Services          | Placeholder | Files exist; no logic |
-| Routes            | Placeholder | Files exist; not mounted in `app.js` |
-| Middlewares       | Placeholder | Files exist; not used yet |
-| Utils             | Partial     | `jwt.js` and `response.js` implemented; `geo.js` placeholder |
+| Config (env, db)  | ✅ Done   | Env validation, DB connect/disconnect, dev fallback without DB |
+| App bootstrap     | ✅ Done   | Express app, CORS, morgan, JSON, `/health` route |
+| Server entry      | ✅ Done   | `server.js` is the single entry point |
+| **Auth System**   | ✅ **Done** | **User, Donor, Hospital models** + **Auth service** + **Auth controller** + **Auth routes** (full signup/login/refresh/password flow) |
+| Utils             | ✅ Done     | `jwt.js` and `response.js` fully implemented; `geo.js` placeholder |
+| Middlewares       | 🔴 Placeholder | `auth.middleware.js`, `role.middleware.js`, `error.middleware.js` – not yet implemented |
+| Models            | 🟡 Partial | User, Donor, Hospital done; Request, Donation, Notification empty |
+| Controllers       | 🟡 Partial | Auth done; Donor, Hospital, Admin controllers empty |
+| Services          | 🔴 Placeholder | Matching, Donation, Reward, Notification services empty |
+| Routes            | 🟡 Partial | Auth routes done and mounted; Donor, Hospital, Admin routes empty |
 | Tests             | None   | `npm test` is a placeholder |
 
-So right now the project **runs**, validates env, optionally connects to MongoDB, exposes **GET /health**, and provides **JWT** and **response** utilities ready for auth and API routes. Models, controllers, services, routes, and middlewares are prepared as empty or placeholder files for the team to implement.
+The project **runs**, connects to MongoDB, validates auth, and has a **working signup/login system** with user roles (donor, hospital, admin). Auth routes are fully functional. Next priorities: implement middlewares, complete remaining models, and build donor/hospital/admin features.
 
 ---
 
@@ -278,12 +288,12 @@ So right now the project **runs**, validates env, optionally connects to MongoDB
 
 Suggested order for the team:
 
-1. **Models** – Define Mongoose schemas in `models/` (User, Donor, Hospital, Request, Donation, Notification).
-2. **Utils** – `jwt.js` and `response.js` are done; implement `utils/geo.js` when needed for location/distance.
-3. **Middlewares** – Implement `auth.middleware.js`, `role.middleware.js`, and `error.middleware.js`; then plug them into `app.js`.
-4. **Auth** – Implement `auth.service.js` and `auth.controller.js`, then mount `auth.routes.js` under `API_PREFIX` in `app.js`.
-5. **Rest of API** – Implement donor, hospital, and admin routes/services/controllers and mount their routes.
-6. **Error handling** – Use the error middleware as the last middleware in `app.js` for consistent error responses.
-7. **Tests** – Add a test runner and tests (e.g. for auth, health, critical services).
+1. **Middlewares** – Implement `auth.middleware.js` (verify JWT from Authorization header), `role.middleware.js` (check user role), and `error.middleware.js` (centralized error handler); then plug them into `app.js`.
+2. **Remaining Models** – Complete `Request.model.js`, `Donation.model.js`, `Notification.model.js` with full schemas and relationships.
+3. **Donor/Hospital Controllers & Routes** – Implement `donor.controller.js`, `hospital.controller.js` and their routes; mount under `/donor` and `/hospital` with auth middleware.
+4. **Services** – Implement `matching.service.js`, `donation.service.js`, `reward.service.js`, `notification.service.js` for business logic.
+5. **Admin Controller & Routes** – Implement `admin.controller.js` for user/request/donation management; mount under `/admin` with auth + `requireRole('admin')` middleware.
+6. **Utils** – Implement `geo.js` for location-based matching and distance calculations.
+7. **Tests** – Add test suite (auth, endpoints, services, error handling).
 
 

@@ -49,16 +49,8 @@ const userSchema = new Schema(
     password: {
       type: String, 
       required: [true, 'Password is required'], 
-      minlength: [8, 'Minimum lenrth of the password should be 8'], 
+      minlength: [8, 'Minimum length of the password should be 8'], 
       select: false,
-      // This will be added later in the validation layer
-      validate: {
-        validator: function(v) {
-          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(v);
-        },
-        message: 'Invalid password',
-        message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
-      },
     },
     role: {
       type: String,

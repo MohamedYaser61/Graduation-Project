@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import { env } from './config/env.js';
+import authRoutes from './routes/auth.routes.js';
 
 const app = express();
 
@@ -15,6 +16,9 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.json({ app: 'LifeLink', status: 'ok' });
 });
+
+app.use('/auth', authRoutes);
+
 app.get('/test', (req, res) => {
   res.json({ message: 'Test route is working' });
 });

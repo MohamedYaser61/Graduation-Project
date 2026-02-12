@@ -14,11 +14,12 @@
 
 // Auth is the Business Logic Layer for the auth routes
 
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import * as jwt from '../utils/jwt.js';
-import { User } from '../models/User.model.js';
-import { Donor } from '../models/Donor.model.js';
-import { Hospital } from '../models/Hospital.model.js';
+import { env } from '../config/env.js';
+import User from '../models/User.model.js';
+import Donor from '../models/Donor.model.js';
+import Hospital from '../models/Hospital.model.js';
 
 // Register a new user
 export const register = async (data) => {
@@ -28,6 +29,11 @@ export const register = async (data) => {
     const existingUser = await User.findOne({ email: data.email });
     if (existingUser) throw new Error('Email already registered');
     
+    // Validate password strength before hashing
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(data.password)) {
+        throw new Error('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character');
+    }
 
     const hashedPassword = await bcrypt.hash(data.password, env.BCRYPT_SALT_ROUNDS);
 

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import {User} from './User.model.js'
+import User from './User.model.js';
 
 const donorSchema = new mongoose.Schema({
     phoneNumber: {
@@ -46,14 +46,14 @@ const donorSchema = new mongoose.Schema({
     location: {
         city: String,
         governrate: String,
-        required: [true, 'Location is required'],
+        // required: [true, 'Location is required'],
         // This will be in the validation later
-        validate: {
-            validator: function(v) {
-                return v.city && v.governrate;
-            },
-            message: 'Location must contain city and governrate',
-        },
+        // validate: {
+        //     validator: function(v) {
+        //         return v.city && v.governrate;
+        //     },
+        //     message: 'Location must contain city and governrate',
+        // },
     },
 
     dateOfBirth: {

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { User } from './User.model.js'
+import User from './User.model.js'
 
 const hospitalSchema = new mongoose.Schema({
     hospitalName: {
@@ -26,6 +26,6 @@ const hospitalSchema = new mongoose.Schema({
     contactNumber: String,
 })
 
-const Hospital = User.dicriminator('hospital', hospitalSchema);
+const Hospital = User.discriminator('hospital', hospitalSchema);
 
 export default Hospital;

@@ -4,6 +4,8 @@
  * Frontend-friendly and predictable; avoids ad-hoc res.json() in controllers.
  */
 
+import e from 'express';
+
 /**
  * Sends a success JSON response with a consistent shape.
  *
@@ -35,3 +37,9 @@ export function errorResponse(res, statusCode, message) {
     message,
   });
 }
+
+
+export default {
+  success: successResponse,
+  error: errorResponse,
+};

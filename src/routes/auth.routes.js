@@ -1,16 +1,16 @@
 import { Router } from 'express';
+import AUC from '../controllers/auth.controller.js';
 
 const router = Router();
 
-router.post('/signup', signup);
-router.post('/login', login);
-router.post('/logout', logout);
-router.post('/refresh-token', refreshToken);
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/signup', AUC.register);
+router.post('/login', AUC.login);
+router.post('/logout', AUC.logout);
+router.post('/refresh-token', AUC.refreshToken);
+router.post('/forgot-password', AUC.forgotPassword);
+router.post('/reset-password', AUC.resetPassword);
 
-router.get('/me', getMe);
-router.get('/verify-email', verifyEmail);
-router.get('/verify-email-token', verifyEmailToken);
-router.get('/verify-email-token', verifyEmailToken);
+router.get('/me', AUC.getMe);
+router.get('/verify-email', AUC.verifyEmail);
+router.get('/verify-email-token', AUC.verifyEmailToken);
 export default router;

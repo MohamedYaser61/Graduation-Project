@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:8000",
+      "url": "http://localhost:5000",
       "description": "Local development server"
     }
   ],
@@ -18,41 +18,208 @@
         "scheme": "bearer",
         "bearerFormat": "JWT"
       }
-    }
-  },
-  "paths": {
-    "/auth/signup": {
-      "post": {
-        "tags": [
-          "Auth"
+    },
+    "schemas": {
+      "BaseUser": {
+        "type": "object",
+        "required": [
+          "fullName",
+          "email",
+          "password",
+          "role"
         ],
-        "summary": "Register a new donor or hospital account",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "fullName",
-                  "email",
-                  "password",
-                  "role"
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 100,
+            "example": "Sara Ali"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "sara@example.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "Must contain at least one uppercase, one lowercase, one digit, and one special character",
+            "example": "SecurePass@123"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "donor",
+              "hospital"
+            ],
+            "example": "donor"
+          }
+        }
+      },
+      "DonorRegister": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseUser"
+          },
+          {
+            "type": "object",
+            "required": [
+              "phoneNumber",
+              "dateOfBirth"
+            ],
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": [
+                  "donor"
                 ],
+                "example": "donor"
+              },
+              "phoneNumber": {
+                "type": "string",
+                "pattern": "^\\d{10}$",
+                "description": "10-digit phone number",
+                "example": "1234567890"
+              },
+              "dateOfBirth": {
+                "type": "string",
+                "format": "date",
+                "description": "Date of birth (YYYY-MM-DD)",
+                "example": "1990-05-15"
+              },
+              "gender": {
+                "type": "string",
+                "enum": [
+                  "male",
+                  "female",
+                  "not specified"
+                ],
+                "example": "female"
+              },
+              "bloodType": {
+                "type": "string",
+                "enum": [
+                  "A+",
+                  "A-",
+                  "B+",
+                  "B-",
+                  "AB+",
+                  "AB-",
+                  "O+",
+                  "O-"
+                ],
+                "example": "O+"
+              },
+              "location": {
+                "type": "object",
                 "properties": {
+                  "city": {
+                    "type": "string",
+                    "example": "Cairo"
+                  },
+                  "governrate": {
+                    "type": "string",
+                    "example": "Cairo"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "HospitalRegister": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseUser"
+          },
+          {
+            "type": "object",
+            "required": [
+              "hospitalName",
+              "hospitalId",
+              "licenseNumber"
+            ],
+            "properties": {
+              "role": {
+                "type": "string",
+                "enum": [
+                  "hospital"
+                ],
+                "example": "hospital"
+              },
+              "hospitalName": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 200,
+                "example": "Cairo Medical Center"
+              },
+              "hospitalId": {
+                "type": "number",
+                "example": 12345
+              },
+              "licenseNumber": {
+                "type": "string",
+                "minLength": 5,
+                "maxLength": 50,
+                "example": "LIC-2024-001"
+              },
+              "address": {
+                "type": "object",
+                "properties": {
+                  "city": {
+                    "type": "string",
+                    "example": "Cairo"
+                  },
+                  "governrate": {
+                    "type": "string",
+                    "example": "Cairo"
+                  }
+                }
+              },
+              "contactNumber": {
+                "type": "string",
+                "example": "+20123456789"
+              }
+            }
+          }
+        ]
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "User registered successfully"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "accessToken": {
+                "type": "string",
+                "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NmYxMDAwMDAwMDAwMDAwMDAwMDAwMDEiLCJyb2xlIjoiZG9ub3IiLCJpYXQiOjE3MDAwMDAwMDB9.abcdef123456"
+              },
+              "refreshToken": {
+                "type": "string",
+                "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NmYxMDAwMDAwMDAwMDAwMDAwMDAwMDEiLCJyb2xlIjoiZG9ub3IiLCJpYXQiOjE3MDAwMDAwMDB9.xyz789"
+              },
+              "user": {
+                "type": "object",
+                "properties": {
+                  "_id": {
+                    "type": "string",
+                    "example": "66f100000000000000000001"
+                  },
                   "fullName": {
                     "type": "string",
                     "example": "Sara Ali"
                   },
                   "email": {
                     "type": "string",
-                    "format": "email",
                     "example": "sara@example.com"
-                  },
-                  "password": {
-                    "type": "string",
-                    "format": "password",
-                    "example": "Secure@123"
                   },
                   "role": {
                     "type": "string",
@@ -66,36 +233,115 @@
               }
             }
           }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Error message here"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/auth/signup": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Register a new donor or hospital account",
+        "description": "Register using role-specific fields. Donor requires phoneNumber and dateOfBirth. Hospital requires hospitalName, hospitalId, and licenseNumber.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/DonorRegister"
+                  },
+                  {
+                    "$ref": "#/components/schemas/HospitalRegister"
+                  }
+                ],
+                "discriminator": {
+                  "propertyName": "role",
+                  "mapping": {
+                    "donor": "#/components/schemas/DonorRegister",
+                    "hospital": "#/components/schemas/HospitalRegister"
+                  }
+                }
+              },
+              "examples": {
+                "donorExample": {
+                  "summary": "Donor Registration",
+                  "value": {
+                    "fullName": "Sara Ali",
+                    "email": "sara.donor@example.com",
+                    "password": "SecurePass@123",
+                    "role": "donor",
+                    "phoneNumber": "1234567890",
+                    "dateOfBirth": "1990-05-15",
+                    "gender": "female",
+                    "bloodType": "O+"
+                  }
+                },
+                "hospitalExample": {
+                  "summary": "Hospital Registration",
+                  "value": {
+                    "fullName": "Admin User",
+                    "email": "admin@hospital.com",
+                    "password": "SecurePass@123",
+                    "role": "hospital",
+                    "hospitalName": "Cairo Medical Center",
+                    "hospitalId": 12345,
+                    "licenseNumber": "LIC-2024-001"
+                  }
+                }
+              }
+            }
+          }
         },
         "responses": {
           "201": {
             "description": "User registered successfully",
             "content": {
               "application/json": {
-                "example": {
-                  "success": true,
-                  "message": "User registered successfully",
-                  "data": {
-                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                    "user": {
-                      "_id": "66f100000000000000000001",
-                      "fullName": "Sara Ali",
-                      "email": "sara@example.com",
-                      "role": "donor"
-                    }
-                  }
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
                 }
               }
             }
           },
           "400": {
-            "description": "Registration error",
+            "description": "Registration error - validation failed or email already registered",
             "content": {
               "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "Email already registered"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "validationError": {
+                    "summary": "Validation Error",
+                    "value": {
+                      "success": false,
+                      "message": "Email is required; Phone number must be 10 digits"
+                    }
+                  },
+                  "emailExists": {
+                    "summary": "Email Already Registered",
+                    "value": {
+                      "success": false,
+                      "message": "Email is already registered"
+                    }
+                  }
                 }
               }
             }
@@ -128,7 +374,7 @@
                   "password": {
                     "type": "string",
                     "format": "password",
-                    "example": "Secure@123"
+                    "example": "SecurePass@123"
                   }
                 }
               }
@@ -140,19 +386,8 @@
             "description": "Login successful",
             "content": {
               "application/json": {
-                "example": {
-                  "success": true,
-                  "message": "Login successful",
-                  "data": {
-                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                    "user": {
-                      "_id": "66f100000000000000000001",
-                      "fullName": "Sara Ali",
-                      "email": "sara@example.com",
-                      "role": "donor"
-                    }
-                  }
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
                 }
               }
             }
@@ -161,9 +396,8 @@
             "description": "Invalid credentials",
             "content": {
               "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "Invalid credentials"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -201,9 +435,8 @@
             "description": "Logged out successfully",
             "content": {
               "application/json": {
-                "example": {
-                  "success": true,
-                  "message": "Logged out successfully"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -212,9 +445,8 @@
             "description": "Logout error",
             "content": {
               "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "Refresh token is required"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -252,11 +484,23 @@
             "description": "Token refreshed",
             "content": {
               "application/json": {
-                "example": {
-                  "success": true,
-                  "message": "Token refreshed",
-                  "data": {
-                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "accessToken": {
+                          "type": "string"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -266,9 +510,8 @@
             "description": "Refresh error",
             "content": {
               "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "Refresh token is required"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -307,9 +550,8 @@
             "description": "Password reset email sent",
             "content": {
               "application/json": {
-                "example": {
-                  "success": true,
-                  "message": "Password reset email sent"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -318,9 +560,8 @@
             "description": "Forgot password error",
             "content": {
               "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "User not found"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -364,9 +605,8 @@
             "description": "Password reset successful",
             "content": {
               "application/json": {
-                "example": {
-                  "success": true,
-                  "message": "Password reset successful"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -375,9 +615,8 @@
             "description": "Reset error",
             "content": {
               "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "Invalid token"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -401,14 +640,32 @@
             "description": "User retrieved",
             "content": {
               "application/json": {
-                "example": {
-                  "success": true,
-                  "message": "User retrieved",
-                  "data": {
-                    "_id": "66f100000000000000000001",
-                    "fullName": "Sara Ali",
-                    "email": "sara@example.com",
-                    "role": "donor"
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "_id": {
+                          "type": "string"
+                        },
+                        "fullName": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -418,9 +675,8 @@
             "description": "Missing or invalid JWT",
             "content": {
               "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "Authorization header is required"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -434,34 +690,25 @@
           "Auth"
         ],
         "summary": "Send an email verification message",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "email"
-                ],
-                "properties": {
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "example": "sara@example.com"
-                  }
-                }
-              }
-            }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "email",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            },
+            "example": "sara@example.com"
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "Verification email sent",
             "content": {
               "application/json": {
-                "example": {
-                  "success": true,
-                  "message": "Verification email sent"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -470,9 +717,8 @@
             "description": "Verification error",
             "content": {
               "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "User not found"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -486,33 +732,24 @@
           "Auth"
         ],
         "summary": "Verify an email using a verification token",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "token"
-                ],
-                "properties": {
-                  "token": {
-                    "type": "string",
-                    "example": "verify-token-123"
-                  }
-                }
-              }
-            }
+        "parameters": [
+          {
+            "in": "query",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "verify-token-123"
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "Email verified successfully",
             "content": {
               "application/json": {
-                "example": {
-                  "success": true,
-                  "message": "Email verified successfully"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -521,9 +758,8 @@
             "description": "Verification error",
             "content": {
               "application/json": {
-                "example": {
-                  "success": false,
-                  "message": "Invalid token"
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }

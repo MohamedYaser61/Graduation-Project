@@ -424,22 +424,18 @@ const router = Router();
  *               $ref: '#/components/schemas/ErrorResponse'
  *
  * /auth/verify-email:
- *   post:
+ *   get:
  *     tags:
  *       - Auth
  *     summary: Send an email verification message
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [email]
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: sara@example.com
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *         example: sara@example.com
  *     responses:
  *       '200':
  *         description: Verification email sent
@@ -455,21 +451,17 @@ const router = Router();
  *               $ref: '#/components/schemas/ErrorResponse'
  *
  * /auth/verify-email-token:
- *   post:
+ *   get:
  *     tags:
  *       - Auth
  *     summary: Verify an email using a verification token
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [token]
- *             properties:
- *               token:
- *                 type: string
- *                 example: verify-token-123
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: verify-token-123
  *     responses:
  *       '200':
  *         description: Email verified successfully

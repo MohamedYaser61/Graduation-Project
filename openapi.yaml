@@ -613,6 +613,61 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /auth/verify-email:
+    get:
+      tags:
+        - Authentication
+      summary: Send an email verification message
+      description: Request a verification email for an unverified account
+      parameters:
+        - in: query
+          name: email
+          required: true
+          schema:
+            type: string
+            format: email
+          example: sara@example.com
+      responses:
+        '200':
+          description: Verification email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Verification error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/verify-email-token:
+    get:
+      tags:
+        - Authentication
+      summary: Verify an email using a verification token
+      description: Verify a user email address using a token received by email
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+          example: verify-token-123
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Verification error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 tags:
   - name: Authentication
     description: User authentication and authorization endpoints

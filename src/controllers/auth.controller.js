@@ -83,7 +83,12 @@ export const getMe = async (req, res) => {
 // Verify email
 export const verifyEmail = async (req, res) => {
     try {
-        await authService.verifyEmail(req.body.email);
+        const { email } = req.query;
+        if (!email) {
+            return response.error(res, 400, 'Email is required');
+        }
+
+        await authService.verifyEmail(email);
         response.success(res, 200, 'Verification email sent');
     } catch (error) {
         response.error(res, 400, error.message);
@@ -93,7 +98,12 @@ export const verifyEmail = async (req, res) => {
 // Verify email token
 export const verifyEmailToken = async (req, res) => {
     try {
-        await authService.verifyEmailToken(req.body.token);
+        const { token } = req.query;
+        if (!token) {
+            return response.error(res, 400, 'Verification token is required');
+        }
+
+        await authService.verifyEmailToken(token);
         response.success(res, 200, 'Email verified successfully');
     } catch (error) {
         response.error(res, 400, error.message);

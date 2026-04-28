@@ -100,6 +100,30 @@ router.get('/catalog', requireRole('donor'), rc.getRewards);
 
 /**
  * @swagger
+ * /rewards/history:
+ *   get:
+ *     summary: Get donor reward history
+ *     tags: [Rewards - Donor]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [ALL, PENDING, CONFIRMED, DELIVERED, CANCELLED, EXPIRED] }
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Reward history retrieved successfully
+ */
+router.get('/history', requireRole('donor'), rc.getHistory);
+
+/**
+ * @swagger
  * /rewards/catalog/{rewardId}/redeem:
  *   post:
  *     summary: Redeem a reward using points

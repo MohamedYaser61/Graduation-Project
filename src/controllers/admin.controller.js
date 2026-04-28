@@ -335,6 +335,16 @@ export const getDashboard = async (req, res, next) => {
   }
 };
 
+/** GET /admin/statistics */
+export const getStatistics = async (req, res, next) => {
+  try {
+    const summary = await analyticsService.getDashboardSummary();
+    return response.success(res, 200, 'Statistics summary', summary);
+  } catch (error) {
+    next(error);
+  }
+};
+
 /** GET /admin/analytics/donations */
 export const getDonationTrends = async (req, res, next) => {
   try {

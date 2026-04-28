@@ -80,6 +80,19 @@ router.post('/system/maintenance', adminController.setMaintenanceMode);
  */
 router.get('/system/maintenance', adminController.getMaintenanceStatus);
 
+/**
+ * @swagger
+ * /admin/statistics:
+ *   get:
+ *     summary: Get admin statistics summary
+ *     tags: [Admin - Analytics]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Statistics summary
+ */
+router.get('/statistics', adminController.getStatistics);
+
 // ──────────────────────────────────────────────
 //  Audit Logs
 // ──────────────────────────────────────────────

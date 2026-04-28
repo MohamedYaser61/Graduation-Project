@@ -113,139 +113,125 @@
 - Error responses use the same envelope as success responses: `success`, `message`, and optional `details`.
 - Password reset, email verification, and 2FA tokens are short-lived, purpose-scoped tokens, not normal access JWTs.
 
-## Endpoints & Examples
-Below are the main endpoints with concise example requests and responses. Keep `Authorization: Bearer <accessToken>` for protected routes.
+## All Project Endpoints
+Every route listed here is also available under the `/api/v1/*` compatibility prefix unless noted otherwise. Use `Authorization: Bearer <accessToken>` for protected endpoints.
+
+### Operational
+- GET /
+- GET /health
+- GET /api-docs (development only)
+- GET /openapi.json (development only)
 
 ### Auth
 - POST /auth/signup
-  Request JSON (donor):
-  ```json
-  {"fullName":"Test Donor","email":"donor@test.com","password":"SecurePass@123","role":"donor","phoneNumber":"01012345678"}
-  ```
-  Response (201):
-  ```json
-  {"success":true,"message":"User registered","data":{"accessToken":"...","refreshToken":"..."}}
-  ```
-
+- POST /auth/register
 - POST /auth/login
-  Request JSON:
-  ```json
-  {"email":"donor@test.com","password":"SecurePass@123"}
-  ```
-  Success response (2FA off):
-  ```json
-  {"success":true,"message":"Login successful","data":{"accessToken":"...","refreshToken":"...","user":{"_id":"...","role":"donor"}}}
-  ```
-  2FA challenge response:
-  ```json
-  {"success":true,"message":"2FA verification required","data":{"requires2FA":true,"tempToken":"..."}}
-  ```
-
-- POST /auth/refresh-token
-  Request JSON:
-  ```json
-  {"refreshToken":"..."}
-  ```
-  Response (200):
-  ```json
-  {"success":true,"message":"Token refreshed","data":{"accessToken":"..."}}
-  ```
-
 - POST /auth/logout
-  Request JSON:
-  ```json
-  {"refreshToken":"..."}
-  ```
-  Response (200):
-  ```json
-  {"success":true,"message":"Logged out successfully"}
-  ```
+- POST /auth/refresh-token
+- POST /auth/validate-token
+- POST /auth/forgot-password
+- POST /auth/reset-password
+- POST /auth/send-otp
+- POST /auth/verify-otp
+- POST /auth/verify-email
+- POST /auth/verify-email-token
+- POST /auth/2fa/setup
+- POST /auth/2fa/confirm-setup
+- POST /auth/2fa/verify
+- POST /auth/2fa/disable
+- POST /auth/fcm-token
+- PUT /auth/fcm-token
+- DELETE /auth/fcm-token
 
-### Donor (requires donor role)
+### Donor
 - GET /donor/profile
-  Response (200):
-  ```json
-  {"success":true,"message":"Donor profile retrieved","data":{"_id":"...","fullName":"Test Donor","email":"donor@test.com"}}
-  ```
-
+- PUT /donor/profile
 - GET /donor/requests
-  Response (200):
-  ```json
-  {"success":true,"message":"Requests retrieved","data":{"requests":[],"pagination":{"page":1,"limit":10}}}
-  ```
-
+- GET /donor/matches
 - POST /donor/respond/:requestId
-  Request JSON:
-  ```json
-  {"quantity":1}
-  ```
-  Response (201):
-  ```json
-  {"success":true,"message":"Response submitted","data":{"donorId":"...","requestId":"...","status":"pending"}}
-  ```
+- GET /donor/history
+- PUT /donor/availability
 
-### Hospital (requires hospital role)
+### Hospital
+- GET /hospital/profile
+- PUT /hospital/profile
 - POST /hospital/request
-  Request JSON:
-  ```json
-  {"type":"blood","bloodType":"O+","urgency":"high","requiredBy":"2026-05-01T00:00:00.000Z","quantity":2}
-  ```
-  Response (201):
-  ```json
-  {"success":true,"message":"Donation request created","data":{"_id":"...","status":"pending"}}
-  ```
+- GET /hospital/requests
+- GET /hospital/requests/:requestId
+- PUT /hospital/requests/:requestId
+- DELETE /hospital/requests/:requestId
+- GET /hospital/donations
+- GET /hospital/blood-bank-settings
+- PUT /hospital/blood-bank-settings
+- GET /hospital/notification-preferences
+- PUT /hospital/notification-preferences
+- GET /hospital/reports/monthly
+- GET /hospital/staff
+- POST /hospital/staff
+- DELETE /hospital/staff/:id
 
-### Discovery (public)
-- GET /hospitals
-  Response (200):
-  ```json
-  {"success":true,"message":"Hospitals list","data":{"hospitals":[],"pagination":{"page":1}}}
-  ```
+### Admin
+- GET /admin/profile
+- GET /admin/system/health
+- POST /admin/system/maintenance
+- GET /admin/system/maintenance
+- GET /admin/statistics
+- GET /admin/audit-logs
+- GET /admin/users
+- GET /admin/users/stats
+- POST /admin/users/hospital
+- GET /admin/users/:id
+- PATCH /admin/users/:id/verify
+- PATCH /admin/users/:id/unverify
+- PATCH /admin/users/:id/suspend
+- PATCH /admin/users/:id/unsuspend
+- DELETE /admin/users/:id
+- GET /admin/requests
+- GET /admin/requests/stats
+- GET /admin/requests/:id
+- GET /admin/requests/:id/donations
+- PATCH /admin/requests/:id/fulfill
+- PATCH /admin/requests/:id/cancel
+- POST /admin/requests/:id/broadcast
+- GET /admin/analytics/dashboard
+- GET /admin/analytics/donations
+- GET /admin/analytics/blood-types
+- GET /admin/analytics/top-donors
+- GET /admin/analytics/growth
+- POST /admin/emergency/broadcast
+- GET /admin/emergency/critical
+- GET /admin/emergency/shortage-alerts
 
-### Notifications (authenticated)
+### Notifications
 - GET /notifications
-  Response (200):
-  ```json
-  {"success":true,"message":"Notifications retrieved","data":{"notifications":[],"pagination":{}}}
-  ```
+- GET /notifications/:id
+- PATCH /notifications/:id/read
+- PATCH /notifications/read-all
+- DELETE /notifications/:id
 
 ### Rewards
+- GET /rewards/points
+- GET /rewards/points/history
+- GET /rewards/history
+- GET /rewards/badges
+- GET /rewards/catalog
 - POST /rewards/catalog/:rewardId/redeem
-  Request JSON:
-  ```json
-  {"delivery_preference":"IN_APP"}
-  ```
-  Response (200):
-  ```json
-  {"success":true,"message":"Redemption confirmed","data":{"redemptionId":"..."}}
-  ```
+- GET /rewards/redemptions
+- GET /rewards/leaderboard
+- POST /rewards/admin/users/:userId/points/adjust
+- PATCH /rewards/admin/catalog/:rewardId/status
+- GET /rewards/admin/analytics
 
-### Admin (admin/superadmin)
-- POST /admin/users/hospital
-  Request JSON:
-  ```json
-  {"fullName":"City Hospital","email":"hospital@test.com","password":"SecurePass@123","hospitalName":"City Hospital","hospitalId":123,"licenseNumber":"LIC-001"}
-  ```
-  Response (201):
-  ```json
-  {"success":true,"message":"Hospital created","data":{"_id":"..."}}
-  ```
+### Discovery
+- GET /hospitals
+- GET /hospitals/nearby
+- GET /hospitals/:id
 
-### Help & Support
+### Help
 - GET /help/faq
-  Response (200): {"success":true,"message":"FAQ retrieved","data":{"faqs":[]}}
+- GET /help/documents/:type
 
+### Support
 - POST /support/contact
-  Request JSON:
-  ```json
-  {"subject":"App issue","message":"Description..."}
-  ```
-  Response (201):
-  ```json
-  {"success":true,"message":"Support request submitted"}
-  ```
 
-Notes:
-- The file previously contained a short quick-reference table which was removed to avoid duplication.
-- Many endpoints have compatibility aliases under `/api/v1/*` (notably `/api/v1/auth/*` and `/api/v1/hospitals`).
-- For protected endpoints include `Authorization: Bearer <accessToken>` and consider `x-test-mode: true` during local E2E testing.
+Selected examples for common flows remain below.

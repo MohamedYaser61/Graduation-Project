@@ -2188,6 +2188,24 @@
         }
       }
     },
+    "/admin/statistics": {
+      "get": {
+        "summary": "Get admin statistics summary",
+        "tags": [
+          "Admin - Analytics"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistics summary"
+          }
+        }
+      }
+    },
     "/admin/audit-logs": {
       "get": {
         "summary": "List audit logs",
@@ -3222,6 +3240,55 @@
         }
       }
     },
+    "/rewards/history": {
+      "get": {
+        "summary": "Get donor reward history",
+        "tags": [
+          "Rewards - Donor"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ALL",
+                "PENDING",
+                "CONFIRMED",
+                "DELIVERED",
+                "CANCELLED",
+                "EXPIRED"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reward history retrieved successfully"
+          }
+        }
+      }
+    },
     "/rewards/catalog/{rewardId}/redeem": {
       "post": {
         "summary": "Redeem a reward using points",
@@ -3572,6 +3639,38 @@
       }
     },
     "/notifications/{id}": {
+      "get": {
+        "summary": "Get one notification",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification retrieved successfully"
+          },
+          "400": {
+            "description": "Invalid notification id"
+          },
+          "404": {
+            "description": "Notification not found"
+          }
+        }
+      },
       "delete": {
         "summary": "Delete one notification",
         "tags": [

@@ -33,6 +33,9 @@ router.use(authMiddleware);
  */
 router.get('/points', requireRole('donor'), rc.getPoints);
 
+// Compatibility alias: allow listing catalog at the base `/rewards` path
+router.get('/', requireRole('donor'), rc.getRewards);
+
 /**
  * @swagger
  * /rewards/points/history:
@@ -155,6 +158,9 @@ router.get('/history', requireRole('donor'), rc.getHistory);
  *         description: Insufficient points or limit exceeded
  */
 router.post('/catalog/:rewardId/redeem', requireRole('donor'), rc.redeemReward);
+
+// Compatibility alias: support `/rewards/:rewardId/redeem` alongside `/rewards/catalog/:rewardId/redeem`
+router.post('/:rewardId/redeem', requireRole('donor'), rc.redeemReward);
 
 /**
  * @swagger

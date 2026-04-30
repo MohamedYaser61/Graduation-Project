@@ -21,10 +21,8 @@ import { authLimiter, limiter } from './middlewares/rateLimit.middleware.js';
 import maintenanceMiddleware from './middlewares/maintenance.middleware.js';
 
 // ─── Resolve __dirname for ESM ────────────────────────────────────────────────
-// process.cwd() is unreliable on Render — it may point to the repo root
-// instead of src/. Always derive paths from import.meta.url.
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);   // = /opt/render/project/src/src
+const __dirname = dirname(__filename);
 
 const app = express();
 const startedAt = new Date().toISOString();
@@ -36,8 +34,6 @@ app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'combined'));
 app.use(express.json({ limit: '1mb' }));
 
 // ─── NoSQL injection sanitizer ────────────────────────────────────────────────
-// express-mongo-sanitize cannot reassign req.query in Express 5 (it's a getter).
-// This in-place sanitizer mutates the object contents without replacing the ref.
 const sanitizeInPlace = (obj, { replaceWith = '_', request, onSanitize } = {}) => {
   if (!obj || typeof obj !== 'object') return obj;
   const seen = new Set();
@@ -51,7 +47,6 @@ const sanitizeInPlace = (obj, { replaceWith = '_', request, onSanitize } = {}) =
 
       if (key.includes('$') || key.includes('.')) {
         const newKey = key.replace(/\$/g, replaceWith).replace(/\./g, replaceWith);
-
         current[newKey] = value;
 
         try {
@@ -92,10 +87,35 @@ app.use((req, res, next) => {
   next();
 });
 
+// ─── Health / root ────────────────────────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.json({ app: 'LifeLink', status: 'ok' });
+});
+
+app.get('/health', (req, res) => {
+  res.json({
+    app: 'LifeLink',
+    status: 'ok',
+    pid: process.pid,
+    startedAt,
+    port: env.PORT,
+    env: env.NODE_ENV,
+  });
+});
+
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
+// ─── Routes ───────────────────────────────────────────────────────────────────
+// Admin BEFORE maintenance middleware so admins always have access
+app.use('/admin', limiter, adminRoutes);
+app.use('/api/v1/admin', limiter, adminRoutes);
+
+// Maintenance check — blocks non-admin routes when enabled
+app.use(maintenanceMiddleware);
+
 // ─── API Documentation (Swagger) ─────────────────────────────────────────────
+// Placed AFTER maintenance middleware so it's never blocked and always accessible
 // Runs in all environments except test.
-// Uses __dirname (absolute) so the routes glob works correctly on Render,
-// where process.cwd() ≠ src/ directory.
 if (env.NODE_ENV !== 'test') {
   try {
     const swaggerUi = (await import('swagger-ui-express')).default;
@@ -130,7 +150,6 @@ if (env.NODE_ENV !== 'test') {
         },
         security: [{ bearerAuth: [] }],
       },
-      // __dirname points to src/ — works on both local and Render
       apis: [join(__dirname, './routes/*.js')],
     };
 
@@ -144,44 +163,17 @@ if (env.NODE_ENV !== 'test') {
       },
     }));
 
-    // Raw JSON spec endpoint (useful for Postman import and frontend codegen)
     app.get('/openapi.json', (req, res) => {
       res.json(swaggerSpec);
     });
 
-    console.log('[swagger] Docs available at /api-docs');
+    console.log('[swagger] ✅ Docs available at /api-docs');
   } catch (err) {
-    // Never crash the server if swagger fails to load
-    console.error('[swagger] Failed to initialize:', err?.message ?? err);
+    console.error('[swagger] ❌ Failed to initialize:', err?.message ?? err);
   }
 }
 
-// ─── Health / root ────────────────────────────────────────────────────────────
-app.get('/', (req, res) => {
-  res.json({ app: 'LifeLink', status: 'ok' });
-});
-
-app.get('/health', (req, res) => {
-  res.json({
-    app: 'LifeLink',
-    status: 'ok',
-    pid: process.pid,
-    startedAt,
-    port: env.PORT,
-    env: env.NODE_ENV,
-  });
-});
-
-app.get('/favicon.ico', (req, res) => res.status(204).end());
-
-// ─── Routes ───────────────────────────────────────────────────────────────────
-// Admin BEFORE maintenance middleware so admins always have access
-app.use('/admin', limiter, adminRoutes);
-app.use('/api/v1/admin', limiter, adminRoutes);
-
-// Maintenance check — blocks non-admin routes when enabled
-app.use(maintenanceMiddleware);
-
+// ─── Business Routes ──────────────────────────────────────────────────────────
 app.use('/auth', authLimiter, authRoutes);
 app.use('/api/v1/auth', authLimiter, authRoutes);
 
@@ -194,7 +186,6 @@ app.use('/api/v1/hospital', limiter, hospitalRoutes);
 app.use('/rewards', limiter, rewardRoutes);
 app.use('/api/v1/rewards', limiter, rewardRoutes);
 
-// Appointment routes must come BEFORE /donations to avoid prefix collision
 app.use('/donations/book-appointment', limiter, appointmentRoutes);
 app.use('/api/v1/donations/book-appointment', limiter, appointmentRoutes);
 

@@ -17,6 +17,7 @@ import notificationRoutes from './routes/notification.routes.js';
 import discoveryRoutes from './routes/discovery.routes.js';
 import helpRoutes from './routes/help.routes.js';
 import supportRoutes from './routes/support.routes.js';
+import activityRoutes from './routes/activity.routes.js';
 import errorMiddleware from './middlewares/error.middleware.js';
 import { authLimiter, limiter } from './middlewares/rateLimit.middleware.js';
 import maintenanceMiddleware from './middlewares/maintenance.middleware.js';
@@ -186,26 +187,18 @@ if (env.NODE_ENV !== 'test') {
 }
 
 // ─── Business Routes ──────────────────────────────────────────────────────────
-// Mount all routes under both base path and /api/v1 for backward compatibility & versioning
-const apiRoutes = (router) => {
-  router.use('/auth', authLimiter, authRoutes);
-  router.use('/donor', limiter, donorRoutes);
-  router.use('/hospital', limiter, hospitalRoutes);
-  router.use('/rewards', limiter, rewardRoutes);
-  router.use('/donations/book-appointment', limiter, appointmentRoutes);
-  router.use('/donations', limiter, donationRoutes);
-  router.use('/notifications', limiter, notificationRoutes);
-  router.use('/hospitals', limiter, discoveryRoutes);
-  router.use('/help', helpRoutes);
-  router.use('/support', supportRoutes);
-};
-
-apiRoutes(app);
-
-// /api/v1 versioned routes
-const v1Router = express.Router();
-apiRoutes(v1Router);
-app.use('/api/v1', v1Router);
+// Mount all routes at base path
+app.use('/auth', authLimiter, authRoutes);
+app.use('/donor', limiter, donorRoutes);
+app.use('/donor', limiter, activityRoutes);
+app.use('/hospital', limiter, hospitalRoutes);
+app.use('/rewards', limiter, rewardRoutes);
+app.use('/donations/book-appointment', limiter, appointmentRoutes);
+app.use('/donations', limiter, donationRoutes);
+app.use('/notifications', limiter, notificationRoutes);
+app.use('/hospitals', limiter, discoveryRoutes);
+app.use('/help', helpRoutes);
+app.use('/support', supportRoutes);
 
 // ─── 404 handler ─────────────────────────────────────────────────────────────
 app.use((req, res, next) => {

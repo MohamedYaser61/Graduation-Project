@@ -5,6 +5,7 @@ import Donation from '../models/Donation.model.js';
 import * as matchingService from '../services/matching.service.js';
 import * as donationService from '../services/donation.service.js';
 import * as notificationService from '../services/notification.service.js';
+import * as activityService from '../services/activity.service.js';
 import { parsePagination, paginationMeta } from '../utils/pagination.js';
 import * as rewardService from '../services/reward.service.js';
 
@@ -354,16 +355,18 @@ export const updateHealthHistory = async (req, res, next) => {
 export const getDashboard = async (req, res, next) => {
   try {
     const donorId = req.user.userId;
-    const [donationStats, pointsSummary, badges] = await Promise.all([
+    const [donationStats, pointsSummary, badges, latestActivity] = await Promise.all([
       donationService.getDonorStats(donorId),
       rewardService.getPointsSummary(donorId),
       rewardService.getDonorBadges(donorId),
+      activityService.getLatestActivities(donorId, 5),
     ]);
 
     return response.success(res, 200, 'Donor dashboard retrieved successfully', {
       donationStats,
       pointsSummary,
       badges,
+      latestActivity,
     });
   } catch (err) { next(err); }
 };

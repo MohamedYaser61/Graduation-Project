@@ -16,7 +16,7 @@ const router = Router();
  *   get:
  *     summary: List hospitals for discovery
  *     tags: [Discovery]
- *     description: Public discovery endpoint. Compatibility alias is also mounted under `/api/v1/hospitals`.
+ *     description: Public hospital discovery endpoint.
  *     parameters:
  *       - in: query
  *         name: city

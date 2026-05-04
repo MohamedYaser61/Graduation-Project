@@ -2,8 +2,35 @@ import { Router } from 'express';
 import authMiddleware from '../middlewares/auth.middleware.js';
 import requireRole from '../middlewares/role.middleware.js';
 import * as adminController from '../controllers/admin.controller.js';
+import * as hospitalController from '../controllers/hospital.controller.js';
 
 const router = Router();
+
+/**
+ * @swagger
+ * /admin/login:
+ *   post:
+ *     summary: Login for admin and superadmin accounts
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password, adminKey]
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               adminKey:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Admin login successful
+ */
+router.post('/login', adminController.loginAdmin);
 
 // All admin routes require authentication + admin or superadmin role
 router.use(authMiddleware, requireRole('admin', 'superadmin'));
@@ -23,7 +50,7 @@ router.use(authMiddleware, requireRole('admin', 'superadmin'));
  *       200:
  *         description: Admin profile
  */
-router.get('/profile', adminController.getProfile);
+router.get('/profile', adminController.getAdminProfile);
 
 // ──────────────────────────────────────────────
 //  System Management
@@ -243,7 +270,8 @@ router.get('/hospitals/:id', adminController.getUserById);
  *       '200':
  *         description: Admin list
  */
-router.get('/admins', adminController.listAdmins);
+router.get('/', requireRole('superadmin'), adminController.getAllAdmins);
+router.get('/admins', requireRole('superadmin'), adminController.getAllAdmins);
 /**
  * @swagger
  * /admin/admins/{id}:
@@ -263,7 +291,7 @@ router.get('/admins', adminController.listAdmins);
  *       '200':
  *         description: Admin details
  */
-router.get('/admins/:id', adminController.getAdminById);
+router.get('/admins/:id', requireRole('superadmin'), adminController.getAdminById);
 
 // Donor management
 /**
@@ -450,6 +478,7 @@ router.put('/hospitals/:id/status', adminController.updateHospitalStatus);
  *       '409':
  *         description: Email already registered
  */
+router.post('/create', requireRole('superadmin'), adminController.createAdmin);
 router.post('/admins', requireRole('superadmin'), adminController.createAdmin);
 /**
  * @swagger
@@ -714,6 +743,7 @@ router.get('/users/stats', adminController.getUserStats);
  *       409:
  *         description: Email already registered
  */
+router.post('/hospitals', hospitalController.createHospital);
 router.post('/users/hospital', adminController.createHospital);
 
 /**

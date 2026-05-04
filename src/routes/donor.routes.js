@@ -60,12 +60,8 @@ const router = Router();
  *                 example: '01012345678'
  *               gender:
  *                 type: string
- *                 enum: [male, female, not specified]
+ *                 enum: [male, female]
  *                 example: male
- *               dateOfBirth:
- *                 type: string
- *                 format: date-time
- *                 example: '1995-07-12T00:00:00.000Z'
  *               bloodType:
  *                 type: string
  *                 enum: [A+, A-, B+, B-, AB+, AB-, O+, O-]

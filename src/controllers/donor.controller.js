@@ -28,26 +28,19 @@ export const getProfile = async (req, res, next) => {
 // Update donor profile
 export const updateProfile = async (req, res, next) => {
   try {
-    const { fullName, phoneNumber, gender, dateOfBirth, bloodType, location } = req.body;
+    const { fullName, phoneNumber, gender, bloodType, location } = req.body;
 
     const updateData = {};
     if (fullName) updateData.fullName = fullName;
     if (phoneNumber) {
-      const phoneRegex = /^[0-9]{10}$/;
+      const phoneRegex = /^[0-9]{11}$/;
       if (!phoneRegex.test(phoneNumber)) {
-        return response.error(res, 400, 'Phone number must be 10 digits long');
+        return response.error(res, 400, 'Phone number must be 11 digits long');
       }
       updateData.phoneNumber = phoneNumber;
     }
-    if (gender && ['male', 'female', 'not specified'].includes(gender)) {
+    if (gender && ['male', 'female'].includes(gender)) {
       updateData.gender = gender;
-    }
-    if (dateOfBirth) {
-      const dob = new Date(dateOfBirth);
-      if (dob > new Date()) {
-        return response.error(res, 400, 'Date of birth must be in the past');
-      }
-      updateData.dateOfBirth = dob;
     }
     if (bloodType && ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].includes(bloodType)) {
       updateData.bloodType = bloodType;
@@ -157,7 +150,7 @@ export const respondToRequest = async (req, res, next) => {
     // Validate eligibility
     const isEligible = await donationService.validateEligibility(donor, request);
     if (!isEligible.eligible) {
-      return response.error(res, 400, isEligible.reason);
+        return response.error(res, 400, isEligible.reason || 'Donor is not eligible');
     }
 
     // Create donation

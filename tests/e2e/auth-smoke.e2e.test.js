@@ -29,12 +29,13 @@ describe('Auth Smoke E2E Flow', () => {
     const testEmail = 'newdonor@example.com';
     const testPassword = 'Password123!';
 
-    // 1. POST /auth/register
+    // 1. POST /auth/signup
     let res = await request(app)
-      .post('/api/v1/auth/register')
+      .post('/api/v1/auth/signup')
       .send({
         email: testEmail,
         password: testPassword,
+        confirmPassword: testPassword,
         role: 'donor',
         fullName: 'New Donor',
         phoneNumber: '01011112222',
@@ -57,7 +58,7 @@ describe('Auth Smoke E2E Flow', () => {
     // 3. POST /auth/login
     res = await request(app)
       .post('/api/v1/auth/login')
-      .send({ email: testEmail, password: testPassword });
+      .send({ email: testEmail, password: testPassword, role: 'donor' });
     
     expect(res.status).toBe(200);
     expect(res.body.data.accessToken).toBeDefined();

@@ -375,6 +375,10 @@ router.use(authMiddleware, requireRole('donor'));
 router.get('/profile', donorController.getProfile);
 router.put('/profile', donorController.updateProfile);
 
+// Donor settings
+router.get('/settings', donorController.getSettings);
+router.put('/settings', donorController.updateSettings);
+
 // Request and matching routes
 router.get('/requests', donorController.getRequests);
 router.get('/matches', donorController.getMatches);

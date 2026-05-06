@@ -86,6 +86,12 @@ router.post('/', ctrl.bookAppointment);
  */
 router.get('/my-appointments', ctrl.getMyAppointments);
 
+// Get available appointment slots: ?hospitalId=&date=YYYY-MM-DD
+router.get('/available-slots', ctrl.getAvailableSlots);
+
+// Get appointment details
+router.get('/:appointmentId', ctrl.getAppointmentById);
+
 /**
  * @swagger
  * /donations/book-appointment/{appointmentId}:

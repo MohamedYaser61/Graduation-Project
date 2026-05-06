@@ -8,6 +8,7 @@ import * as notificationService from '../services/notification.service.js';
 import * as activityService from '../services/activity.service.js';
 import { parsePagination, paginationMeta } from '../utils/pagination.js';
 import * as rewardService from '../services/reward.service.js';
+import cache from '../utils/cache.js';
 
 /**
  * Donor Controller - Handles donor-specific operations
@@ -16,10 +17,15 @@ import * as rewardService from '../services/reward.service.js';
 // Get donor profile
 export const getProfile = async (req, res, next) => {
   try {
+    const cacheKey = `profile:${req.user.userId}`;
+    const cached = await cache.get(cacheKey).catch(() => null);
+    if (cached) return response.success(res, 200, 'Donor profile retrieved successfully', cached);
+
     const donor = await Donor.findById(req.user.userId).select('-password');
     if (!donor) {
       return response.error(res, 404, 'Donor profile not found');
     }
+    await cache.set(cacheKey, donor, 30).catch(() => {});
     response.success(res, 200, 'Donor profile retrieved successfully', donor);
   } catch (error) {
     next(error);
@@ -430,19 +436,78 @@ export const updateHealthHistory = async (req, res, next) => {
 export const getDashboard = async (req, res, next) => {
   try {
     const donorId = req.user.userId;
-    const [donationStats, pointsSummary, badges, latestActivity] = await Promise.all([
+    const cacheKey = `dashboard:${donorId}`;
+    const cached = await cache.get(cacheKey).catch(() => null);
+    if (cached) return response.success(res, 200, 'Donor dashboard retrieved successfully', cached);
+
+    const [donationStats, pointsSummary, badges, latestActivity, donor] = await Promise.all([
       donationService.getDonorStats(donorId),
       rewardService.getPointsSummary(donorId),
       rewardService.getDonorBadges(donorId),
       activityService.getLatestActivities(donorId, 5),
+      Donor.findById(donorId).select('fullName bloodType lastDonationDate').lean(),
     ]);
 
-    return response.success(res, 200, 'Donor dashboard retrieved successfully', {
+    // Determine lightweight donationStatus from recent donation or stats
+    const lastDonation = await Donation.findOne({ donorId }).sort({ createdAt: -1 }).select('status createdAt').lean();
+    const donationStatus = lastDonation ? lastDonation.status : 'none';
+
+    const payload = {
+      firstName: donor?.fullName || null,
+      bloodType: donor?.bloodType || null,
+      donationStatus,
+      recentActivity: latestActivity || [],
       donationStats,
       pointsSummary,
       badges,
-      latestActivity,
-    });
+    };
+
+    await cache.set(cacheKey, payload, 30).catch(() => {});
+
+    return response.success(res, 200, 'Donor dashboard retrieved successfully', payload);
+  } catch (err) { next(err); }
+};
+
+// GET /donor/settings
+export const getSettings = async (req, res, next) => {
+  try {
+    const donor = await Donor.findById(req.user.userId).select('settings');
+    if (!donor) return response.error(res, 404, 'Donor not found');
+    return response.success(res, 200, 'Donor settings retrieved', donor.settings || {});
+  } catch (err) { next(err); }
+};
+
+// PUT /donor/settings
+export const updateSettings = async (req, res, next) => {
+  try {
+    const patch = {};
+    const { pushNotifications, emergencyAlerts, privacy, language } = req.body;
+
+    if (pushNotifications !== undefined) {
+      if (typeof pushNotifications !== 'boolean') return response.error(res, 400, 'pushNotifications must be boolean');
+      patch['settings.pushNotifications'] = pushNotifications;
+    }
+    if (emergencyAlerts !== undefined) {
+      if (typeof emergencyAlerts !== 'boolean') return response.error(res, 400, 'emergencyAlerts must be boolean');
+      patch['settings.emergencyAlerts'] = emergencyAlerts;
+    }
+    if (privacy !== undefined) {
+      if (!['public', 'private', 'friends'].includes(privacy)) return response.error(res, 400, 'privacy must be one of public|private|friends');
+      patch['settings.privacy'] = privacy;
+    }
+    if (language !== undefined) {
+      if (!['en', 'ar'].includes(language)) return response.error(res, 400, 'language must be one of en|ar');
+      patch['settings.language'] = language;
+    }
+
+    if (Object.keys(patch).length === 0) return response.error(res, 400, 'No valid settings provided');
+
+    const donor = await Donor.findByIdAndUpdate(req.user.userId, { $set: patch }, { new: true, runValidators: true }).select('settings');
+    // Invalidate caches
+    cache.del(`profile:${req.user.userId}`).catch(() => {});
+    cache.del(`dashboard:${req.user.userId}`).catch(() => {});
+
+    return response.success(res, 200, 'Settings updated successfully', donor.settings);
   } catch (err) { next(err); }
 };
 

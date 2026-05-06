@@ -25,6 +25,9 @@ const router = Router();
  */
 router.get('/my-appointments', authMiddleware, requireRole('donor'), appointmentController.getMyAppointments);
 
+// QR scan confirmation - donors
+router.post('/qr/scan', authMiddleware, requireRole('donor'), donationController.scanQr);
+
 router.use(authMiddleware, requireRole('hospital', 'admin', 'superadmin'));
 
 /**

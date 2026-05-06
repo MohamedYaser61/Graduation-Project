@@ -66,4 +66,4 @@ Summary & Next Steps
 - Add transactional slot locking or capacity checks in `appointment.service.js` to prevent double-booking.
 - Add Redis caching for donor dashboard/profile responses if required for performance.
 
-If you want, I can implement any of the missing items above — tell me which to start with.
+

@@ -70,6 +70,16 @@ const donationSchema = new mongoose.Schema(
       type: String,
       maxlength: [1000, 'Notes cannot exceed 1000 characters'],
     },
+    // Optional QR token issued by hospital for on-site confirmation
+    qrToken: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    qrExpires: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

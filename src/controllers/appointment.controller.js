@@ -55,6 +55,41 @@ export const getMyAppointments = async (req, res, next) => {
   }
 };
 
+export const getAvailableSlots = async (req, res, next) => {
+  try {
+    const { hospitalId, date } = req.query;
+    if (!hospitalId || !date) return response.error(res, 400, 'hospitalId and date are required');
+
+    const slots = await appointmentService.getAvailableSlots(hospitalId, date);
+    return response.success(res, 200, 'Available slots retrieved', { slots });
+  } catch (error) {
+    if (error.message === 'Hospital not found' || error.message === 'Invalid hospital id' || error.message === 'Invalid date') {
+      return response.error(res, 400, error.message);
+    }
+    next(error);
+  }
+};
+
+export const getAppointmentById = async (req, res, next) => {
+  try {
+    const appointmentId = req.params.appointmentId;
+    if (!appointmentId) return response.error(res, 400, 'appointmentId is required');
+
+    const appt = await appointmentService.getAppointmentById(appointmentId);
+    if (!appt) return response.error(res, 404, 'Appointment not found');
+
+    // Access control: donor can access own; hospitals or admins access elsewhere (middleware handles roles)
+    if (req.user.role === 'donor' && String(appt.donorId) !== String(req.user.userId)) {
+      return response.error(res, 403, 'Not authorized to view this appointment');
+    }
+
+    return response.success(res, 200, 'Appointment retrieved', appt);
+  } catch (error) {
+    if (error.message === 'Invalid appointment id') return response.error(res, 400, error.message);
+    next(error);
+  }
+};
+
 export const cancelAppointment = async (req, res, next) => {
   try {
     const donorId = req.user._id;

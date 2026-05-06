@@ -52,6 +52,12 @@ export const bookAppointment = async (donorId, hospitalId, requestId = null, app
       throw new Error('Appointment date must be in the future');
     }
 
+    // Normalize slot window (hourly slot)
+    const slotStart = new Date(apptDate);
+    slotStart.setMinutes(0, 0, 0);
+    const slotEnd = new Date(slotStart);
+    slotEnd.setHours(slotStart.getHours() + 1);
+
     // Prevent duplicate active appointment for same donor + hospital
     const existing = await Appointment.findOne({
       donorId,
@@ -62,13 +68,38 @@ export const bookAppointment = async (donorId, hospitalId, requestId = null, app
       throw new Error('You already have an active appointment at this hospital');
     }
 
-    const appointment = await Appointment.create({
-      donorId,
-      hospitalId,
-      requestId,
-      appointmentDate: apptDate,
-      notes,
-    });
+    // Use transaction to ensure slot capacity not exceeded
+    const session = await mongoose.startSession();
+    let appointment = null;
+    try {
+      await session.withTransaction(async () => {
+        const hospital = await User.findById(hospitalId).session(session);
+        const capacityPerSlot = hospital?.capacity || 5;
+
+        const count = await Appointment.countDocuments({
+          hospitalId,
+          appointmentDate: { $gte: slotStart, $lt: slotEnd },
+          status: { $in: ['pending', 'confirmed'] },
+        }).session(session);
+
+        if (count >= capacityPerSlot) {
+          throw new Error('Selected slot is fully booked');
+        }
+
+        appointment = await Appointment.create([
+          {
+            donorId,
+            hospitalId,
+            requestId,
+            appointmentDate: apptDate,
+            notes,
+          },
+        ], { session });
+        appointment = appointment[0];
+      });
+    } finally {
+      session.endSession();
+    }
 
     // Fire-and-forget notification to hospital
     Notification.create({
@@ -87,6 +118,62 @@ export const bookAppointment = async (donorId, hospitalId, requestId = null, app
   } catch (error) {
     throw error;
   }
+};
+
+/**
+ * Get available hourly slots for a hospital on a date
+ * @param {string} hospitalId
+ * @param {string|Date} dateStr - YYYY-MM-DD
+ */
+export const getAvailableSlots = async (hospitalId, dateStr) => {
+  if (!mongoose.Types.ObjectId.isValid(hospitalId)) throw new Error('Invalid hospital id');
+  const hospital = await User.findById(hospitalId).select('capacity');
+  if (!hospital || hospital.role !== 'hospital') throw new Error('Hospital not found');
+
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) throw new Error('Invalid date');
+
+  const baseDate = new Date(date);
+  baseDate.setHours(0, 0, 0, 0);
+
+  // Default working hours 08:00 - 17:00 (9 slots)
+  const startHour = 8;
+  const endHour = 17;
+  const capacityPerSlot = hospital.capacity || 5;
+
+  const slots = [];
+  for (let h = startHour; h < endHour; h++) {
+    const slotStart = new Date(baseDate);
+    slotStart.setHours(h, 0, 0, 0);
+    const slotEnd = new Date(slotStart);
+    slotEnd.setHours(h + 1);
+
+    // Skip past slots when date is today
+    if (slotEnd <= new Date()) continue;
+
+    const count = await Appointment.countDocuments({
+      hospitalId,
+      appointmentDate: { $gte: slotStart, $lt: slotEnd },
+      status: { $in: ['pending', 'confirmed'] },
+    });
+
+    const remaining = Math.max(0, capacityPerSlot - count);
+    if (remaining > 0) {
+      slots.push({
+        slotStart: slotStart.toISOString(),
+        slotEnd: slotEnd.toISOString(),
+        remainingCapacity: remaining,
+      });
+    }
+  }
+
+  return slots;
+};
+
+export const getAppointmentById = async (appointmentId) => {
+  if (!mongoose.Types.ObjectId.isValid(appointmentId)) throw new Error('Invalid appointment id');
+  const appt = await Appointment.findById(appointmentId).populate('hospitalId', 'hospitalName fullName address contactNumber location');
+  return appt;
 };
 
 export const getMyAppointments = async (donorId, filters = {}) => {

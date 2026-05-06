@@ -85,13 +85,50 @@ export const getNearbyHospitals = async (req, res, next) => {
     const radiusKm = req.query.radius_km ? Number(req.query.radius_km) : null;
 
     const query = { role: 'hospital', deletedAt: null, isSuspended: false, isEmailVerified: true };
-    const hospitals = await Hospital.find(query).limit(500);
+    // If coordinates provided and at least some hospitals have location, use $near for geospatial query
+    let geoResults = [];
+    let legacyResults = [];
 
-    let mapped = hospitals.map((h) => {
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      try {
+        // Hospitals with GeoJSON location
+        const geoQuery = {
+          ...query,
+          location: { $exists: true },
+        };
+
+        const mongoNear = { $geometry: { type: 'Point', coordinates: [lng, lat] } };
+        if (Number.isFinite(radiusKm)) mongoNear.$maxDistance = Math.floor(radiusKm * 1000);
+
+        geoResults = await Hospital.find({
+          ...geoQuery,
+          location: { $near: mongoNear },
+        }).limit(500);
+      } catch (e) {
+        // If $near fails (no index or other issue), fallback to full scan
+        geoResults = [];
+      }
+
+      // Hospitals without location but with legacy lat/long
+      legacyResults = await Hospital.find({
+        ...query,
+        $or: [
+          { location: { $exists: false } },
+          { location: null },
+        ],
+      }).limit(500);
+    } else {
+      // No coordinates provided — return generic list
+      legacyResults = await Hospital.find(query).sort({ hospitalName: 1, fullName: 1 }).limit(500);
+    }
+
+    const combined = [...geoResults, ...legacyResults];
+
+    let mapped = combined.map((h) => {
       const entry = mapHospital(h);
-      // Support both new format (lat/long) and old format (location.coordinates)
-      const hLat = h.lat ?? h.location?.coordinates?.lat;
-      const hLng = h.long ?? h.location?.coordinates?.lng;
+      // Support both new format (lat/long) and legacy lat/long
+      const hLat = (h.location && Array.isArray(h.location.coordinates) && h.location.coordinates.length === 2) ? h.location.coordinates[1] : h.lat;
+      const hLng = (h.location && Array.isArray(h.location.coordinates) && h.location.coordinates.length === 2) ? h.location.coordinates[0] : h.long;
       if (Number.isFinite(lat) && Number.isFinite(lng) && Number.isFinite(hLat) && Number.isFinite(hLng)) {
         entry.distanceKm = Number(haversineKm(lat, lng, hLat, hLng).toFixed(2));
       }

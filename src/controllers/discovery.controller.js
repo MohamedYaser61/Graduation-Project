@@ -1,6 +1,7 @@
 import response from '../utils/response.js';
 import Hospital from '../models/Hospital.model.js';
 import { parsePagination, paginationMeta } from '../utils/pagination.js';
+import Request from '../models/Request.model.js';
 
 const toRad = (deg) => (deg * Math.PI) / 180;
 
@@ -13,7 +14,7 @@ const haversineKm = (lat1, lng1, lat2, lng2) => {
   return 2 * R * Math.asin(Math.sqrt(a));
 };
 
-const mapHospital = (h) => ({
+const mapHospital = (h, extras = {}) => ({
   hospitalId: h._id,
   hospital_id: h._id,
   name: h.hospitalName || h.fullName,
@@ -24,6 +25,10 @@ const mapHospital = (h) => ({
   location: h.location || null,
   lat: h.lat || null,
   long: h.long || null,
+  bloodTypes: h.bloodBanksAvailable || [],
+  isAvailable: (h.bloodBanksAvailable || []).length > 0,
+  urgentNeedsCount: extras.urgentNeedsCount ?? 0,
+  ...extras,
 });
 
 export const listHospitals = async (req, res, next) => {
@@ -87,6 +92,12 @@ export const getNearbyHospitals = async (req, res, next) => {
     const query = { role: 'hospital', deletedAt: null, isSuspended: false, isEmailVerified: true };
     const hospitals = await Hospital.find(query).limit(500);
 
+    const urgentCounts = await Request.aggregate([
+      { $match: { status: { $in: ['pending', 'in-progress'] }, urgency: { $in: ['high', 'critical'] } } },
+      { $group: { _id: '$hospitalId', count: { $sum: 1 } } },
+    ]);
+    const urgentMap = Object.fromEntries(urgentCounts.map(u => [u._id.toString(), u.count]));
+
     let mapped = hospitals.map((h) => {
       const entry = mapHospital(h);
       // Support both new format (lat/long) and old format (location.coordinates)
@@ -95,6 +106,9 @@ export const getNearbyHospitals = async (req, res, next) => {
       if (Number.isFinite(lat) && Number.isFinite(lng) && Number.isFinite(hLat) && Number.isFinite(hLng)) {
         entry.distanceKm = Number(haversineKm(lat, lng, hLat, hLng).toFixed(2));
       }
+      entry.isAvailable = true;
+      entry.urgentNeedsCount = urgentMap[h._id.toString()] || 0;
+      entry.bloodTypes = h.bloodBanksAvailable || [];
       return entry;
     });
 
@@ -112,6 +126,64 @@ export const getNearbyHospitals = async (req, res, next) => {
     return response.success(res, 200, 'Nearby hospitals retrieved successfully', {
       hospitals: mapped,
       total: mapped.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const searchHospitals = async (req, res, next) => {
+  try {
+    const { q = '', bloodType, availableOnly } = req.query;
+
+    const query = { role: 'hospital', deletedAt: null, isSuspended: false, isEmailVerified: true };
+    if (q) {
+      query.$or = [
+        { fullName: { $regex: q, $options: 'i' } },
+        { hospitalName: { $regex: q, $options: 'i' } },
+      ];
+    }
+    if (bloodType) {
+      query.bloodBanksAvailable = bloodType;
+    }
+
+    const hospitals = await Hospital.find(query).sort({ hospitalName: 1, fullName: 1 }).limit(100);
+    let results = hospitals.map((hospital) => ({
+      id: hospital._id,
+      name: hospital.hospitalName || hospital.fullName,
+      address: hospital.address || null,
+      bloodTypes: hospital.bloodBanksAvailable || [],
+      isAvailable: (hospital.bloodBanksAvailable || []).length > 0,
+      lat: hospital.lat ?? null,
+      long: hospital.long ?? null,
+    }));
+
+    if (availableOnly === 'true' || availableOnly === '1') {
+      results = results.filter((hospital) => hospital.isAvailable);
+    }
+
+    return response.success(res, 200, 'Hospitals searched successfully', { hospitals: results });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getHospitalsForMap = async (req, res, next) => {
+  try {
+    const hospitals = await Hospital.find({
+      role: 'hospital',
+      deletedAt: null,
+      isSuspended: false,
+      isEmailVerified: true,
+    }).select('hospitalName fullName lat long');
+
+    return response.success(res, 200, 'Hospitals retrieved successfully for map', {
+      hospitals: hospitals.map((hospital) => ({
+        id: hospital._id,
+        name: hospital.hospitalName || hospital.fullName,
+        lat: hospital.lat ?? null,
+        long: hospital.long ?? null,
+      })),
     });
   } catch (error) {
     next(error);

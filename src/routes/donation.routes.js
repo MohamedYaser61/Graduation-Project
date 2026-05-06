@@ -8,24 +8,57 @@ const router = Router();
 
 /**
  * @swagger
- * /donations/my-appointments:
+ * /donations/types:
  *   get:
  *     tags:
- *       - Appointments
- *     summary: Get donor appointments via the donations compatibility alias
- *     security:
- *       - bearerAuth: []
+ *       - Donations
+ *     summary: Get supported donation types
  *     responses:
  *       '200':
- *         description: Appointments fetched successfully
- *       '401':
- *         description: Missing or invalid JWT
- *       '403':
- *         description: Role not allowed
+ *         description: Donation types retrieved successfully
  */
-router.get('/my-appointments', authMiddleware, requireRole('donor'), appointmentController.getMyAppointments);
+router.get('/types', donationController.getDonationTypes);
 
-router.use(authMiddleware, requireRole('hospital', 'admin', 'superadmin'));
+router.use(authMiddleware);
+
+/**
+ * @swagger
+ * /donations/validate:
+ *   post:
+ *     tags:
+ *       - Donations
+ *     summary: Validate if a donor can donate for a given hospital and date
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [hospitalId, date]
+ *     responses:
+ *       '200':
+ *         description: Donation eligibility checked successfully
+ */
+router.post('/validate', requireRole('donor'), donationController.validateDonationEligibility);
+
+/**
+ * @swagger
+ * /donations/qr/scan:
+ *   post:
+ *     tags:
+ *       - Donations
+ *     summary: Confirm a donation by scanning an appointment QR token
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *     responses:
+ *       '200':
+ *         description: Donation confirmed successfully
+ */
+router.post('/qr/scan', requireRole('hospital', 'admin', 'superadmin'), donationController.scanQr);
 
 /**
  * @swagger
@@ -36,23 +69,19 @@ router.use(authMiddleware, requireRole('hospital', 'admin', 'superadmin'));
  *     summary: Mark a donation as completed
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [donationId]
- *     responses:
- *       '200':
- *         description: Donation completed successfully
- *       '400':
- *         description: Invalid donation payload
- *       '401':
- *         description: Missing or invalid JWT
- *       '403':
- *         description: Role not allowed
  */
-router.post('/complete', donationController.completeDonation);
+router.post('/complete', requireRole('hospital', 'admin', 'superadmin'), donationController.completeDonation);
+
+/**
+ * @swagger
+ * /donations/my-appointments:
+ *   get:
+ *     tags:
+ *       - Appointments
+ *     summary: Get donor appointments via the donations compatibility alias
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/my-appointments', requireRole('donor'), appointmentController.getMyAppointments);
 
 export default router;

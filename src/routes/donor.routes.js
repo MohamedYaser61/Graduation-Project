@@ -11,7 +11,7 @@ const router = Router();
  * @swagger
  * tags:
  *   - name: Donor
- *     description: Donor profile, requests, and donation management (Role: donor)
+ *     description: "Donor profile, requests, and donation management (Role: donor)"
  */
 
 /**
@@ -416,5 +416,65 @@ router.get('/history', donorController.getDonationHistory);
 
 // Availability management
 router.put('/availability', donorController.updateAvailability);
+
+/**
+ * @swagger
+ * /donor/settings:
+ *   get:
+ *     tags:
+ *       - Donor
+ *     summary: Get donor notification and preference settings
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Settings retrieved successfully
+ *       '401':
+ *         description: Missing or invalid JWT
+ *       '403':
+ *         description: Role not allowed
+ *       '404':
+ *         description: Donor profile not found
+ *   put:
+ *     tags:
+ *       - Donor
+ *     summary: Update donor settings
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pushNotifications:
+ *                 type: boolean
+ *               emergencyAlerts:
+ *                 type: boolean
+ *               privacyMode:
+ *                 type: boolean
+ *               language:
+ *                 type: string
+ *                 enum: [en, ar]
+ *           example:
+ *             pushNotifications: true
+ *             emergencyAlerts: true
+ *             privacyMode: false
+ *             language: en
+ *     responses:
+ *       '200':
+ *         description: Settings updated successfully
+ *       '400':
+ *         description: Invalid settings payload
+ *       '401':
+ *         description: Missing or invalid JWT
+ *       '403':
+ *         description: Role not allowed
+ *       '404':
+ *         description: Donor profile not found
+ */
+router.get('/settings', donorController.getSettings);
+router.put('/settings', donorController.updateSettings);
 
 export default router;

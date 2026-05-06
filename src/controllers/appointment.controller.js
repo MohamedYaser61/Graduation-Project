@@ -2,9 +2,11 @@ import response from '../utils/response.js';
 import * as appointmentService from '../services/appointment.service.js';
 import ERR from '../utils/errorCodes.js';
 
+const getDonorId = (req) => req?.user?.userId || req?.user?._id;
+
 export const bookAppointment = async (req, res, next) => {
   try {
-    const donorId = req.user._id;
+    const donorId = getDonorId(req);
     const { hospitalId, requestId, appointmentDate, notes } = req.body;
 
     if (!hospitalId || !appointmentDate) {
@@ -44,7 +46,7 @@ export const bookAppointment = async (req, res, next) => {
 
 export const getMyAppointments = async (req, res, next) => {
   try {
-    const donorId = req.user._id;
+    const donorId = getDonorId(req);
     const { skip, limit } = req.query;
 
     const result = await appointmentService.getMyAppointments(donorId, { skip, limit });
@@ -55,9 +57,30 @@ export const getMyAppointments = async (req, res, next) => {
   }
 };
 
+export const getAvailableSlots = async (req, res, next) => {
+  try {
+    const { hospitalId, date } = req.query;
+
+    if (!hospitalId || !date) {
+      return response.error(res, 400, 'hospitalId and date are required');
+    }
+
+    const slots = await appointmentService.getAvailableSlots(hospitalId, date);
+    return response.success(res, 200, 'Available slots retrieved successfully', slots);
+  } catch (error) {
+    if (error.message === 'Invalid hospital id' || error.message === 'Invalid date') {
+      return response.error(res, 400, error.message);
+    }
+    if (error.message === 'Hospital not found') {
+      return response.error(res, 404, error.message);
+    }
+    next(error);
+  }
+};
+
 export const cancelAppointment = async (req, res, next) => {
   try {
-    const donorId = req.user._id;
+    const donorId = getDonorId(req);
     const appointmentId = req.params.appointmentId;
 
     if (!appointmentId) return response.error(res, 400, 'appointmentId is required');
@@ -68,6 +91,44 @@ export const cancelAppointment = async (req, res, next) => {
   } catch (error) {
     if (error.message === 'Appointment not found') return response.error(res, 404, ERR.APPOINTMENT_NOT_FOUND);
     if (error.message === 'This appointment cannot be cancelled') return response.error(res, 400, ERR.APPOINTMENT_CANNOT_CANCEL);
+    next(error);
+  }
+};
+
+export const getAppointmentById = async (req, res, next) => {
+  try {
+    const donorId = getDonorId(req);
+    const appointmentId = req.params.appointmentId;
+
+    if (!appointmentId) return response.error(res, 400, 'appointmentId is required');
+
+    const appointment = await appointmentService.getAppointmentById(appointmentId, donorId);
+
+    return response.success(res, 200, 'Appointment retrieved', appointment);
+  } catch (error) {
+    if (error.message === 'Appointment not found') return response.error(res, 404, 'Appointment not found');
+    if (error.message === 'Invalid appointment id') return response.error(res, 400, 'Invalid appointment id');
+    next(error);
+  }
+};
+
+export const rescheduleAppointment = async (req, res, next) => {
+  try {
+    const donorId = getDonorId(req);
+    const appointmentId = req.params.appointmentId;
+    const { date } = req.body;
+
+    if (!appointmentId) return response.error(res, 400, 'appointmentId is required');
+    if (!date) return response.error(res, 400, 'date is required');
+
+    const appointment = await appointmentService.rescheduleAppointment(appointmentId, donorId, date);
+
+    return response.success(res, 200, 'Appointment rescheduled', appointment);
+  } catch (error) {
+    if (error.message === 'Appointment not found') return response.error(res, 404, 'Appointment not found');
+    if (error.message === 'Invalid appointment id') return response.error(res, 400, 'Invalid appointment id');
+    if (error.message.includes('rescheduled')) return response.error(res, 400, error.message);
+    if (error.message.includes('future')) return response.error(res, 400, error.message);
     next(error);
   }
 };

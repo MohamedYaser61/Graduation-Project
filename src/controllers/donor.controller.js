@@ -1,5 +1,6 @@
 import response from '../utils/response.js';
 import Donor from '../models/Donor.model.js';
+import Appointment from '../models/Appointment.model.js';
 import Request from '../models/Request.model.js';
 import Donation from '../models/Donation.model.js';
 import * as matchingService from '../services/matching.service.js';
@@ -430,18 +431,49 @@ export const updateHealthHistory = async (req, res, next) => {
 export const getDashboard = async (req, res, next) => {
   try {
     const donorId = req.user.userId;
-    const [donationStats, pointsSummary, badges, latestActivity] = await Promise.all([
+    
+    // Fetch all dashboard data in parallel
+    const [donor, appointment, donationStats, pointsSummary, badges, latestActivity] = await Promise.all([
+      Donor.findById(donorId).select('fullName bloodType lastDonationDate suspensionStatus'),
+      Appointment.findOne({ donorId, status: { $in: ['pending', 'confirmed'] } }).sort({ appointmentDate: -1 }),
       donationService.getDonorStats(donorId),
       rewardService.getPointsSummary(donorId),
       rewardService.getDonorBadges(donorId),
       activityService.getLatestActivities(donorId, 5),
     ]);
 
+    // Compute donation status
+    let donationStatus = 'eligible';
+    if (appointment) {
+      donationStatus = 'pending';
+    } else if (donor?.suspensionStatus === 'suspended') {
+      donationStatus = 'notEligible';
+    } else if (donor?.lastDonationDate) {
+      const daysSinceLastDonation = Math.floor(
+        (new Date() - donor.lastDonationDate) / (1000 * 60 * 60 * 24)
+      );
+      if (daysSinceLastDonation < 56) {
+        donationStatus = 'notEligible';
+      }
+    }
+
+    const displayName = donor?.fullName || 'Donor';
+    const firstName = displayName.split(' ')[0] || displayName;
+
     return response.success(res, 200, 'Donor dashboard retrieved successfully', {
-      donationStats,
-      pointsSummary,
-      badges,
-      latestActivity,
+      userInfo: {
+        firstName,
+        fullName: displayName,
+        bloodType: donor?.bloodType || 'Unknown',
+        donationStatus,
+      },
+      stats: {
+        totalDonations: donationStats?.totalDonations || 0,
+        points: pointsSummary?.totalPoints || 0,
+        livesSaved: (donationStats?.totalDonations || 0) * 3,
+      },
+      recentActivity: latestActivity || [],
+      badges: badges || [],
     });
   } catch (err) { next(err); }
 };
@@ -559,5 +591,59 @@ export const declineUrgentRequest = async (req, res, next) => {
     });
 
     return response.success(res, 201, 'Urgent request declined successfully', declinedResponse);
+  } catch (err) { next(err); }
+};
+
+// ─── Donor Settings (Dev 1 Task 5) ─────────────────────────────────────────
+export const getSettings = async (req, res, next) => {
+  try {
+    const donorId = req.user.userId;
+    const donor = await Donor.findById(donorId).select('settings');
+
+    if (!donor) {
+      return response.error(res, 404, 'Donor not found');
+    }
+
+    return response.success(res, 200, 'Donor settings retrieved successfully', {
+      settings: donor.settings || {
+        pushNotifications: true,
+        emergencyAlerts: true,
+        privacyMode: false,
+        language: 'en',
+      },
+    });
+  } catch (err) { next(err); }
+};
+
+export const updateSettings = async (req, res, next) => {
+  try {
+    const donorId = req.user.userId;
+    const { pushNotifications, emergencyAlerts, privacyMode, language } = req.body;
+
+    // Validate language enum
+    if (language && !['en', 'ar'].includes(language)) {
+      return response.error(res, 400, 'Language must be "en" or "ar"');
+    }
+
+    // Build update object
+    const updateData = {};
+    if (pushNotifications !== undefined) updateData['settings.pushNotifications'] = pushNotifications;
+    if (emergencyAlerts !== undefined) updateData['settings.emergencyAlerts'] = emergencyAlerts;
+    if (privacyMode !== undefined) updateData['settings.privacyMode'] = privacyMode;
+    if (language !== undefined) updateData['settings.language'] = language;
+
+    const updatedDonor = await Donor.findByIdAndUpdate(
+      donorId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select('settings');
+
+    if (!updatedDonor) {
+      return response.error(res, 404, 'Donor not found');
+    }
+
+    return response.success(res, 200, 'Donor settings updated successfully', {
+      settings: updatedDonor.settings,
+    });
   } catch (err) { next(err); }
 };

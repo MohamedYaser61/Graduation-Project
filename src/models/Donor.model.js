@@ -111,6 +111,26 @@ const donorSchema = new mongoose.Schema({
         default: true,
     },
 
+    settings: {
+        pushNotifications: {
+            type: Boolean,
+            default: true,
+        },
+        emergencyAlerts: {
+            type: Boolean,
+            default: true,
+        },
+        privacyMode: {
+            type: Boolean,
+            default: false,
+        },
+        language: {
+            type: String,
+            enum: ['en', 'ar'],
+            default: 'en',
+        },
+    },
+
     
     // Derived status is exposed through virtuals.
     // Base User model already stores `isSuspended` for ban status.

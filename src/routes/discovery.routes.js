@@ -93,6 +93,24 @@ router.get('/nearby', discoveryController.getNearbyHospitals);
 
 /**
  * @swagger
+ * /hospitals/search:
+ *   get:
+ *     summary: Search hospitals by keyword, blood type, and availability
+ *     tags: [Discovery]
+ */
+router.get('/search', discoveryController.searchHospitals);
+
+/**
+ * @swagger
+ * /hospitals/map:
+ *   get:
+ *     summary: Get hospitals for map markers
+ *     tags: [Discovery]
+ */
+router.get('/map', discoveryController.getHospitalsForMap);
+
+/**
+ * @swagger
  * /hospitals/{id}:
  *   get:
  *     summary: Get hospital details by id

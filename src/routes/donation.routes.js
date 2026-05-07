@@ -11,7 +11,7 @@ const router = Router();
  * /donations/types:
  *   get:
  *     tags:
- *       - Donations
+ *       - Donor
  *     summary: Get supported donation types
  *     responses:
  *       '200':
@@ -26,7 +26,7 @@ router.use(authMiddleware);
  * /donations/validate:
  *   post:
  *     tags:
- *       - Donations
+ *       - Donor
  *     summary: Validate if a donor can donate for a given hospital and date
  *     security:
  *       - bearerAuth: []
@@ -48,7 +48,7 @@ router.post('/validate', requireRole('donor'), donationController.validateDonati
  * /donations/qr/scan:
  *   post:
  *     tags:
- *       - Donations
+ *       - Donor
  *     summary: Confirm a donation by scanning an appointment QR token
  *     security:
  *       - bearerAuth: []
@@ -65,7 +65,7 @@ router.post('/qr/scan', requireRole('hospital', 'admin', 'superadmin'), donation
  * /donations/complete:
  *   post:
  *     tags:
- *       - Donations
+ *       - Donor
  *     summary: Mark a donation as completed
  *     security:
  *       - bearerAuth: []
@@ -77,7 +77,7 @@ router.post('/complete', requireRole('hospital', 'admin', 'superadmin'), donatio
  * /donations/my-appointments:
  *   get:
  *     tags:
- *       - Appointments
+ *       - Donor
  *     summary: Get donor appointments via the donations compatibility alias
  *     security:
  *       - bearerAuth: []

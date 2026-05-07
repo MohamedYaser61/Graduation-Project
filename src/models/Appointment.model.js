@@ -61,6 +61,11 @@ const appointmentSchema = new mongoose.Schema(
       default: null,
     },
 
+    qrExpiresAt: {
+      type: Date,
+      default: null,
+    },
+
     // Dev 1: Donation type selection
     donationType: {
       type: String,

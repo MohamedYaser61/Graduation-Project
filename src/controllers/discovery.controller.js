@@ -19,12 +19,17 @@ const mapHospital = (h, extras = {}) => ({
   hospital_id: h._id,
   name: h.hospitalName || h.fullName,
   fullName: h.fullName,
-  contactNumber: h.contactNumber || null,
+  phoneNumber: h.contactNumber || h.phone || null,
+  contactNumber: h.contactNumber || h.phone || null,
   email: h.email,
   address: h.address || null,
-  location: h.location || null,
-  lat: h.lat || null,
-  long: h.long || null,
+  location: Number.isFinite(h.lat) && Number.isFinite(h.long)
+    ? { lat: h.lat, lng: h.long }
+    : null,
+  lat: h.lat ?? null,
+  lng: h.long ?? null,
+  hospitalType: h.hospitalType || h.type || 'General Hospital',
+  workingHours: h.workingHours || '9AM - 5PM',
   bloodTypes: h.bloodBanksAvailable || [],
   isAvailable: (h.bloodBanksAvailable || []).length > 0,
   urgentNeedsCount: extras.urgentNeedsCount ?? 0,
@@ -84,13 +89,22 @@ export const getHospitalById = async (req, res, next) => {
 
 export const getNearbyHospitals = async (req, res, next) => {
   try {
+    const { search, bloodType } = req.query;
     // Accept both lat/long and latitude/longitude for backwards compatibility
     const lat = Number(req.query.lat ?? req.query.latitude);
     const lng = Number(req.query.long ?? req.query.longitude);
     const radiusKm = req.query.radius_km ? Number(req.query.radius_km) : null;
 
     const query = { role: 'hospital', deletedAt: null, isSuspended: false, isEmailVerified: true };
-    const hospitals = await Hospital.find(query).limit(500);
+    if (search) {
+      query.$or = [
+        { fullName: { $regex: search, $options: 'i' } },
+        { hospitalName: { $regex: search, $options: 'i' } },
+      ];
+    }
+    if (bloodType) query.bloodBanksAvailable = bloodType;
+
+    const hospitals = await Hospital.find(query);
 
     const urgentCounts = await Request.aggregate([
       { $match: { status: { $in: ['pending', 'in-progress'] }, urgency: { $in: ['high', 'critical'] } } },
@@ -106,9 +120,7 @@ export const getNearbyHospitals = async (req, res, next) => {
       if (Number.isFinite(lat) && Number.isFinite(lng) && Number.isFinite(hLat) && Number.isFinite(hLng)) {
         entry.distanceKm = Number(haversineKm(lat, lng, hLat, hLng).toFixed(2));
       }
-      entry.isAvailable = true;
       entry.urgentNeedsCount = urgentMap[h._id.toString()] || 0;
-      entry.bloodTypes = h.bloodBanksAvailable || [];
       return entry;
     });
 
@@ -123,9 +135,12 @@ export const getNearbyHospitals = async (req, res, next) => {
       return a.distanceKm - b.distanceKm;
     });
 
+    const { skip, limit, page } = parsePagination(req.query, 20);
+    const paginated = mapped.slice(skip, skip + limit);
+
     return response.success(res, 200, 'Nearby hospitals retrieved successfully', {
-      hospitals: mapped,
-      total: mapped.length,
+      hospitals: paginated,
+      pagination: paginationMeta(mapped.length, page, limit),
     });
   } catch (error) {
     next(error);
@@ -155,7 +170,12 @@ export const searchHospitals = async (req, res, next) => {
       bloodTypes: hospital.bloodBanksAvailable || [],
       isAvailable: (hospital.bloodBanksAvailable || []).length > 0,
       lat: hospital.lat ?? null,
-      long: hospital.long ?? null,
+      lng: hospital.long ?? null,
+      location: Number.isFinite(hospital.lat) && Number.isFinite(hospital.long)
+        ? { lat: hospital.lat, lng: hospital.long }
+        : null,
+      hospitalType: hospital.hospitalType || hospital.type || 'General Hospital',
+      workingHours: hospital.workingHours || '9AM - 5PM',
     }));
 
     if (availableOnly === 'true' || availableOnly === '1') {
@@ -178,11 +198,11 @@ export const getHospitalsForMap = async (req, res, next) => {
     }).select('hospitalName fullName lat long');
 
     return response.success(res, 200, 'Hospitals retrieved successfully for map', {
-      hospitals: hospitals.map((hospital) => ({
-        id: hospital._id,
-        name: hospital.hospitalName || hospital.fullName,
-        lat: hospital.lat ?? null,
-        long: hospital.long ?? null,
+      hospitals: hospitals.map((h) => ({
+        id: h._id,
+        name: h.hospitalName || h.fullName,
+        lat: h.lat ?? null,
+        lng: h.long ?? null,
       })),
     });
   } catch (error) {

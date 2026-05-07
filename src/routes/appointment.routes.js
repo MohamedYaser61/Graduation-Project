@@ -12,7 +12,7 @@ router.use(authMiddleware, requireRole('donor'));
  * /donations/book-appointment:
  *   post:
  *     tags:
- *       - Appointments
+ *       - Donor
  *     summary: Book a donor appointment with a hospital
  *     security:
  *       - bearerAuth: []
@@ -61,7 +61,7 @@ router.post('/', ctrl.bookAppointment);
  * /donations/book-appointment/available-slots:
  *   get:
  *     tags:
- *       - Appointments
+ *       - Donor
  *     summary: Get available appointment slots for a hospital on a given date
  *     security:
  *       - bearerAuth: []
@@ -73,7 +73,7 @@ router.get('/available-slots', ctrl.getAvailableSlots);
  * /donations/book-appointment/my-appointments:
  *   get:
  *     tags:
- *       - Appointments
+ *       - Donor
  *     summary: Get the authenticated donor appointments
  *     security:
  *       - bearerAuth: []
@@ -103,7 +103,7 @@ router.get('/my-appointments', ctrl.getMyAppointments);
  * /donations/book-appointment/{appointmentId}:
  *   get:
  *     tags:
- *       - Appointments
+ *       - Donor
  *     summary: Get appointment details
  *     security:
  *       - bearerAuth: []
@@ -130,7 +130,7 @@ router.get('/:appointmentId', ctrl.getAppointmentById);
  * /donations/book-appointment/{appointmentId}:
  *   patch:
  *     tags:
- *       - Appointments
+ *       - Donor
  *     summary: Reschedule a donor appointment
  *     security:
  *       - bearerAuth: []
@@ -172,7 +172,7 @@ router.patch('/:appointmentId', ctrl.rescheduleAppointment);
  * /donations/book-appointment/{appointmentId}:
  *   delete:
  *     tags:
- *       - Appointments
+ *       - Donor
  *     summary: Cancel a donor appointment
  *     security:
  *       - bearerAuth: []

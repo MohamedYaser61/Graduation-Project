@@ -92,6 +92,68 @@ export const validateDonationEligibility = async (req, res, next) => {
   }
 };
 
+export const verifyQr = async (req, res, next) => {
+  try {
+    const qrToken = req.body.qrToken || req.body.qrCode;
+    if (!qrToken) return response.error(res, 400, 'qrToken is required');
+
+    const appointment = await Appointment.findOne({ qrToken })
+      .populate('donorId', 'bloodType suspensionStatus lastDonationDate')
+      .populate('hospitalId', 'fullName hospitalName');
+
+    if (!appointment) return response.error(res, 404, 'Invalid QR code');
+    if (appointment.qrScannedAt) return response.error(res, 409, 'QR code already used');
+    if (appointment.status === 'cancelled') return response.error(res, 400, 'Appointment is cancelled');
+    if (!['pending', 'confirmed'].includes(appointment.status))
+      return response.error(res, 400, 'Appointment is not active');
+
+    // Check QR expiry if qrExpiresAt is set
+    if (appointment.qrExpiresAt && new Date() > appointment.qrExpiresAt)
+      return response.error(res, 400, 'QR code expired');
+
+    const donor = appointment.donorId;
+    const eligibility = await eligibilityService.canDonate(donor, { persistTravelDeferral: false });
+    if (!eligibility.eligible) return response.error(res, 403, eligibility.reason || 'Donor not eligible');
+
+    const donation = await Donation.create({
+      donorId: donor._id,
+      requestId: appointment.requestId || null,
+      quantity: 1,
+      status: 'completed',
+      completedDate: new Date(),
+    });
+
+    appointment.status = 'completed';
+    appointment.qrScannedAt = new Date();
+    await appointment.save();
+
+    await Donor.findByIdAndUpdate(donor._id, { lastDonationDate: new Date() });
+    await rewardService.onDonationCompleted(donor._id, donation._id, false);
+
+    activityService.logActivity(donor._id, {
+      type: 'donation', action: 'qr_verified',
+      title: 'Donation Verified', description: 'Hospital QR verified',
+      referenceId: donation._id.toString(), referenceType: 'Donation',
+    }).catch(() => {});
+
+    const hospitalName = appointment.hospitalId?.hospitalName || appointment.hospitalId?.fullName || 'Hospital';
+    const pointsEarned = appointment.donationType === 'Whole Blood' ? 100 : 120;
+
+    return response.success(res, 200, 'Donation verified successfully', {
+      donation: {
+        donationId: donation._id,
+        type: appointment.donationType || 'Whole Blood',
+        date: appointment.qrScannedAt,
+        location: hospitalName,
+        status: 'confirmed',
+      },
+      pointsEarned,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const scanQr = async (req, res, next) => {
   try {
     const qrToken = req.body.qrToken || req.body.qrCode;
@@ -121,10 +183,6 @@ export const scanQr = async (req, res, next) => {
 
     if (!appointment.requestId) {
       return response.error(res, 400, 'Appointment is not linked to a donation request');
-    }
-
-    if (appointment.appointmentDate && new Date(appointment.appointmentDate) <= new Date()) {
-      return response.error(res, 400, 'Appointment date has passed');
     }
 
     const donor = appointment.donorId;

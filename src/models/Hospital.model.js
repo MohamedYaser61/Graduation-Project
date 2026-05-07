@@ -15,6 +15,16 @@ const hospitalSchema = new mongoose.Schema({
         trim: true,
         default: 'hospital',
     },
+    hospitalType: {
+        type: String,
+        default: 'General Hospital',
+        trim: true,
+    },
+    workingHours: {
+        type: String,
+        default: '9AM - 5PM',
+        trim: true,
+    },
     phone: {
         type: String,
         trim: true,

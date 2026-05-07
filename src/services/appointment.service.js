@@ -73,7 +73,9 @@ export const bookAppointment = async (donorId, hospitalId, requestId = null, app
       requestId,
       appointmentDate: apptDate,
       notes,
+      status: 'confirmed',
       qrToken,
+      qrExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
     });
 
     // Fire-and-forget notification to hospital

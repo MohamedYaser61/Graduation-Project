@@ -23,7 +23,6 @@ const router = Router();
  *     summary: Get the authenticated user's activity timeline
  *     description: |
  *       Returns a paginated, timestamped history of all user actions (donations, rewards, urgent responses, profile updates).
- *       Supports optional filtering by activity type.
  *       Results are sorted newest-first.
  *     security:
  *       - bearerAuth: []
@@ -43,12 +42,6 @@ const router = Router();
  *           minimum: 1
  *           maximum: 100
  *           default: 20
- *       - name: type
- *         in: query
- *         description: Optional activity type filter
- *         schema:
- *           type: string
- *           enum: [donation, reward, emergency_response, profile_update, appointment, badge, achievement, referral, subscription, admin_action]
  *     responses:
  *       '200':
  *         description: Activity timeline retrieved successfully
@@ -91,6 +84,7 @@ const router = Router();
  *                           type:
  *                             type: string
  *                             enum: [donation, reward, emergency_response, profile_update, appointment, badge, achievement, referral, subscription, admin_action]
+ *                             description: Activity category. Derived from `metadata._type` when a top-level `type` is not present. May be null for legacy records without a type.
  *                           status:
  *                             type: string
  *                             example: "success"

@@ -40,7 +40,26 @@ const router = Router();
  *     security: [{ bearerAuth: [] }]
  *     responses:
  *       200:
- *         description: All notifications deleted
+ *         description: All notifications deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: All notifications deleted successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     deletedCount:
+ *                       type: integer
+ *                       example: 5
+ *       401:
+ *         description: Unauthorized - missing or invalid JWT token
  */
 router.get('/', authMiddleware, notificationController.getNotifications);
 router.delete('/', authMiddleware, notificationController.deleteAllNotifications);
@@ -95,12 +114,6 @@ router.patch('/read-all', authMiddleware, notificationController.markAllNotifica
  *         description: Invalid notification id
  *       404:
  *         description: Notification not found
- */
-router.get('/:id', authMiddleware, notificationController.getNotificationById);
-
-/**
- * @swagger
- * /notifications/{id}:
  *   delete:
  *     summary: Delete one notification
  *     tags: [Donor]
@@ -110,9 +123,27 @@ router.get('/:id', authMiddleware, notificationController.getNotificationById);
  *         name: id
  *         required: true
  *         schema: { type: string }
+ *         description: The notification ID to delete
  *     responses:
  *       200:
- *         description: Notification deleted
+ *         description: Notification deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Notification deleted successfully
+ *       400:
+ *         description: Invalid notification id format
+ *       401:
+ *         description: Unauthorized - missing or invalid JWT token
+ *       404:
+ *         description: Notification not found or does not belong to user
  */
 router.delete('/:id', authMiddleware, notificationController.deleteNotificationById);
 

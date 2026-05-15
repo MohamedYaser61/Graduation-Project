@@ -821,6 +821,34 @@ export const resetPassword = async ({ email, otp, password }) => {
   return { success: true, message: 'Password reset successfully' };
 };
 
+export const changePassword = async (userId, { currentPassword, newPassword }) => {
+  if (!userId) throw createServiceError(ERR.AUTH_USER_NOT_FOUND, 404);
+  if (!currentPassword) throw createServiceError('Current password is required', 400);
+  if (!newPassword) throw createServiceError('New password is required', 400);
+
+  const user = await User.findById(userId).select('+password +passwordChangedAt');
+  if (!user) throw createServiceError(ERR.AUTH_USER_NOT_FOUND, 404);
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) throw createServiceError(ERR.AUTH_INVALID_PASSWORD, 401);
+
+  user.password = newPassword;
+  user.passwordChangedAt = new Date();
+  await user.save();
+
+  void sendPasswordResetConfirmationEmail({
+    to: user.email,
+    fullName: user.fullName,
+  }).catch((err) => {
+    logger.warn('Background password-change confirmation email failed', {
+      email: user.email,
+      message: err?.message,
+    });
+  });
+
+  return { success: true };
+};
+
 export const verify2FALogin = async (tempToken, code) => {
   if (!tempToken) throw createServiceError(ERR.TWO_FA_TEMP_TOKEN_REQUIRED, 400);
   if (!code) throw createServiceError(ERR.TWO_FA_CODE_REQUIRED, 400);

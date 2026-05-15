@@ -12,6 +12,7 @@ import authMiddleware from '../middlewares/auth.middleware.js';
 const router = Router();
 
 router.post('/reset-password', AUC.resetPassword);
+router.post('/change-password', authMiddleware, AUC.changePassword);
 router.post('/signup', AUC.register);
 router.post('/login', AUC.loginUser);
 router.post('/hospital/login', AUC.loginHospital);

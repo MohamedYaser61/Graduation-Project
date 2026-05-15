@@ -3957,8 +3957,8 @@ paths:
           description: Activity timeline retrieved successfully
           content:
             application/json:
-                schema:
-                  $ref: '#/components/schemas/ActivitiesResponse'
+              schema:
+                $ref: '#/components/schemas/ActivitiesResponse'
               example:
                 success: true
                 message: Activity timeline retrieved successfully

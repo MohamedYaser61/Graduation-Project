@@ -22,7 +22,7 @@ The support flow lacks several critical components of a functional helpdesk:
 *   **No Email Triggers**: Zero notifications are sent. The user doesn't get a confirmation, and admins aren't alerted to new tickets.
 
 ## 3. Check best practices
-*   **Rate limiting (Failed)**: In `src/app.js`, `app.use('/support', supportRoutes)` is completely missing the `limiter` middleware that is applied to other routes (like `/donor` and `/hospitals`). This leaves the endpoint vulnerable to spam and DDoS.
+*   **Rate limiting (Fixed)**: In `src/app.js`, `app.use('/support', limiter, supportRoutes)` now properly applies the standard API rate limiter to prevent spam and DDoS attacks.
 *   **Input validation (Poor)**: It relies on a manual `if` check and Mongoose schema limits (`maxlength: 2000`). It lacks dedicated `Joi` validation to enforce email formats or array structures *before* hitting the database layer.
 *   **Ticket status tracking (Inadequate)**: The schema enum only allows `['OPEN', 'REVIEWED']`. Standard helpdesk flows require statuses like `IN_PROGRESS`, `RESOLVED`, and `CLOSED`.
 *   **User/Admin replies (Missing)**: The schema has no `messages` array or `parentId` reference, making back-and-forth communication impossible.
@@ -79,7 +79,7 @@ return response.success(res, 201, 'Support request submitted', { ticketId: ticke
 
 ## 5. Priority list (What to fix first vs later)
 
-1.  **URGENT (Do this today):** Add the `limiter` middleware to the `/support` route in `app.js`. An unprotected public text input endpoint is a massive spam risk.
+1.  ~~**URGENT (Do this today):** Add the `limiter` middleware to the `/support` route in `app.js`. An unprotected public text input endpoint is a massive spam risk.~~ *(Completed)*
 2.  **HIGH:** Implement proper `Joi` validation for the `/support/contact` POST payload to strictly validate email strings and attachment URLs.
 3.  **MEDIUM:** Refactor the `SupportMessage` schema to support the `thread` array (replies) and expand the `status` enum as shown above.
 4.  **MEDIUM:** Create the Admin REST endpoints (`GET /admin/support`, `POST /admin/support/:id/reply`) so staff can actually answer the tickets.

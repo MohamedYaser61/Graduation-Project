@@ -3661,6 +3661,16 @@ paths:
                   type: string
                   description: Donor full name
                   example: Ahmed Hassan
+                email:
+                  type: string
+                  format: email
+                  description: Donor email address. Changing this will require re-verification.
+                  example: ahmed@example.com
+                dateOfBirth:
+                  type: string
+                  format: date
+                  description: Donor date of birth
+                  example: "1995-05-15"
                 phoneNumber:
                   type: string
                   description: Donor phone number

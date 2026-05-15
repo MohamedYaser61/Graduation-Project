@@ -856,9 +856,13 @@ export const verify2FALogin = async (tempToken, code) => {
   const decoded = verifyScopedToken(tempToken, 'two_factor_auth');
 
   // Read TF doc with lean for fast verification
-  const tf = await TwoFactor.findOne({ userId: decoded.userId }).select('enabled secret backupCodes').lean();
+  const tf = await TwoFactor.findOne({ userId: decoded.userId }).select('enabled secret backupCodes failedAttempts lockedUntil').lean();
   if (!tf?.enabled || !tf.secret) {
     throw createServiceError(ERR.TWO_FA_NOT_ENABLED, 400);
+  }
+
+  if (tf.lockedUntil && new Date(tf.lockedUntil) > new Date()) {
+    throw createServiceError('Account temporarily locked due to too many failed 2FA attempts', 429);
   }
 
   const normalizedCode = String(code).trim();
@@ -870,13 +874,18 @@ export const verify2FALogin = async (tempToken, code) => {
   const backupExists = (tf.backupCodes || []).includes(normalizedCode.toUpperCase());
 
   if (!expectedCodes.includes(normalizedCode) && !backupExists) {
+    const failedAttempts = (tf.failedAttempts || 0) + 1;
+    const lockedUntil = failedAttempts >= 5 ? new Date(Date.now() + 15 * 60000) : null;
+    await TwoFactor.updateOne({ userId: decoded.userId }, { $set: { failedAttempts, lockedUntil } });
     throw createServiceError(ERR.TWO_FA_CODE_INVALID, 400);
   }
 
-  // If a backup code was used, remove it atomically (no extra read/save cycle)
+  // If code is correct, reset failures and remove backup code if used
+  const updatePayload = { $set: { failedAttempts: 0, lockedUntil: null } };
   if (backupExists) {
-    await TwoFactor.updateOne({ userId: decoded.userId }, { $pull: { backupCodes: normalizedCode.toUpperCase() } });
+    updatePayload.$pull = { backupCodes: normalizedCode.toUpperCase() };
   }
+  await TwoFactor.updateOne({ userId: decoded.userId }, updatePayload);
 
   const user = await User.findById(decoded.userId).select('-password').lean();
   if (!user) throw createServiceError(ERR.AUTH_USER_NOT_FOUND, 404);

@@ -17,7 +17,7 @@ While the core TOTP logic is sound, there are several critical security gaps:
 
 *   **No Brute-Force Protection**: TOTP codes are only 6 digits (1,000,000 possibilities). There is no account-level lockout mechanism. An attacker who compromises a password can brute-force the 6-digit code.
 *   **Plaintext Secrets**: The TOTP `secret` and `backupCodes` are stored in plaintext in the database. If the database is compromised, attackers can generate valid TOTP codes for any user.
-*   **Missing Rate Limiting**: `POST /auth/2fa/verify` relies on the global `/auth` rate limiter (IP-based). Distributed brute-force attacks across multiple IPs can bypass this.
+*   **Missing Rate Limiting (Fixed)**: A strict IP-based rate limiter is now explicitly applied to the `/auth/2fa/verify` endpoint.
 *   **No Recovery Process**: If a user loses their authenticator app *and* their backup codes, there is no administrative flow or email-based recovery fallback to reset 2FA.
 
 ## 3. Check best practices
@@ -25,7 +25,7 @@ While the core TOTP logic is sound, there are several critical security gaps:
 *   **Backup Code Invalidation (Pass)**: Backup codes are removed atomically using `$pull` immediately after they are used, preventing replay attacks.
 *   **Atomic Operations (Pass)**: The setup and disable flows use `findOneAndUpdate` to avoid race conditions and ensure dirty state isn't left behind.
 *   **Secret Storage (Fail)**: TOTP secrets are extremely sensitive. Storing them in plaintext violates standard cryptographic best practices. They should be encrypted at rest.
-*   **Rate Limiting / Account Lockout (Fail)**: Missing entirely for the verification step.
+*   **Rate Limiting / Account Lockout (Fixed)**: An account-level lockout mechanism freezes 2FA verification after 5 failed attempts. A strict rate limiter also throttles the endpoint.
 
 ## 4. Suggest improvements with code examples
 
@@ -94,7 +94,7 @@ router.post('/2fa/verify', strict2FALimiter, AUC.verify2FA);
 
 ## 5. Priority list (What to fix first vs later)
 
-1.  **CRITICAL (Do this today):** Implement Account-Level Lockout (Improvement A) to prevent brute-forcing of the 6-digit PIN.
-2.  **HIGH:** Apply a strict IP-based rate limiter specifically to `/auth/2fa/verify` (Improvement C) as defense-in-depth against distributed attacks.
+1.  ~~**CRITICAL (Do this today):** Implement Account-Level Lockout (Improvement A) to prevent brute-forcing of the 6-digit PIN.~~ *(Completed)*
+2.  ~~**HIGH:** Apply a strict IP-based rate limiter specifically to `/auth/2fa/verify` (Improvement C) as defense-in-depth against distributed attacks.~~ *(Completed)*
 3.  **MEDIUM:** Refactor the codebase to Encrypt TOTP Secrets at rest (Improvement B). This is vital for long-term security but requires careful data migration if users already have 2FA enabled.
 4.  **LOW:** Implement a fallback recovery process (e.g., an Admin panel to reset 2FA, or an email-based reset flow with a 7-day delay for security).

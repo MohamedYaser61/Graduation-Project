@@ -172,7 +172,7 @@ app.use('/hospitals', limiter, discoveryRoutes);
 app.use('/analytics', limiter, analyticsRoutes);
 app.use('/campaigns', limiter, campaignRoutes);
 app.use('/help', helpRoutes);
-app.use('/support', supportRoutes);
+app.use('/support', limiter, supportRoutes);
 app.use('/api/webhooks', webhookRoutes);
 
 // Flutter-facing aliases that keep the newer root paths stable.

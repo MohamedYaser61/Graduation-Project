@@ -21,10 +21,12 @@ router.post('/logout', AUC.logout);
 router.post('/refresh-token', AUC.refreshToken);
 router.post('/forgot-password', AUC.forgotPassword);
 
+import { strict2FALimiter } from '../middlewares/rateLimit.middleware.js';
+
 router.post('/verify-otp', AUC.verifyOtp);
 router.post('/2fa/setup', authMiddleware, AUC.setup2FA);
 router.post('/2fa/confirm-setup', authMiddleware, AUC.confirm2FASetup);
-router.post('/2fa/verify', AUC.verify2FA);
+router.post('/2fa/verify', strict2FALimiter, AUC.verify2FA);
 router.post('/2fa/disable', authMiddleware, AUC.disable2FA);
 
 router.get('/me', authMiddleware, AUC.getMe);

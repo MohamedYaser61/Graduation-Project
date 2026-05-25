@@ -1065,14 +1065,8 @@ export const updateNotificationPreferences = async (req, res, next) => {
   }
 };
 
-export const getBloodInventory = async (req, res, next) => {
-  try {
-    const summary = await adminService.getBloodInventorySummary(req.user.userId);
-    return response.success(res, 200, 'Blood inventory retrieved successfully', summary);
-  } catch (error) {
-    next(error);
-  }
-};
+// Removed: `getBloodInventory` handler — hospital inventory access consolidated
+// to the admin summary endpoint. Use `GET /admin/blood-inventory-summary` instead.
 
 // GET /hospital/appointments - upcoming appointments for the hospital
 export const getAppointments = async (req, res, next) => {

@@ -64,7 +64,7 @@ router.delete('/notifications/:id', notificationController.deleteNotificationByI
 // Extended compatibility features
 router.get('/blood-bank-settings', hospitalController.getBloodBankSettings);
 router.put('/blood-bank-settings', hospitalController.updateBloodBankSettings);
-router.get('/blood-inventory', hospitalController.getBloodInventory);
+// Removed: GET /hospital/blood-inventory handled by admin summary endpoint
 router.get('/notification-preferences', hospitalController.getNotificationPreferences);
 router.put('/notification-preferences', hospitalController.updateNotificationPreferences);
 router.get('/reports/monthly', hospitalController.getMonthlyReports);

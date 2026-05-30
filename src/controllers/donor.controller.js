@@ -699,67 +699,67 @@ export const declineUrgentRequest = async (req, res, next) => {
       description: `Declined urgent ${request.type} request with ${request.urgency} urgency${reason ? `: ${reason}` : ''}`,
 */
 // Function implementations removed - see above
-    const { requestId } = req.params;
-    const { reason } = req.body;
+//     const { requestId } = req.params;
+//     const { reason } = req.body;
 
-    const request = await Request.findOne({
-      _id: requestId,
-      urgency: { $in: ['high', 'critical'] },
-      status: { $in: ['pending', 'in-progress'] },
-    });
+//     const request = await Request.findOne({
+//       _id: requestId,
+//       urgency: { $in: ['high', 'critical'] },
+//       status: { $in: ['pending', 'in-progress'] },
+//     });
 
-    if (!request) {
-      return response.error(res, 404, 'Urgent request not found');
-    }
+//     if (!request) {
+//       return response.error(res, 404, 'Urgent request not found');
+//     }
 
-    const donor = await Donor.findById(req.user.userId);
-    if (!donor) {
-      return response.error(res, 404, 'Donor not found');
-    }
+//     const donor = await Donor.findById(req.user.userId);
+//     if (!donor) {
+//       return response.error(res, 404, 'Donor not found');
+//     }
 
-    const existingResponse = await Donation.findOne({
-      donorId: req.user.userId,
-      requestId,
-    });
+//     const existingResponse = await Donation.findOne({
+//       donorId: req.user.userId,
+//       requestId,
+//     });
 
-    if (existingResponse && existingResponse.status !== 'cancelled') {
-      return response.error(res, 400, 'You have already responded to this request');
-    }
+//     if (existingResponse && existingResponse.status !== 'cancelled') {
+//       return response.error(res, 400, 'You have already responded to this request');
+//     }
 
-    if (existingResponse && existingResponse.status === 'cancelled') {
-      return response.success(res, 200, 'Urgent request already declined', existingResponse);
-    }
+//     if (existingResponse && existingResponse.status === 'cancelled') {
+//       return response.success(res, 200, 'Urgent request already declined', existingResponse);
+//     }
 
-    const declinedResponse = await Donation.create({
-      donorId: req.user.userId,
-      requestId,
-      quantity: request.quantity || 1,
-      status: 'cancelled',
-      notes: reason ? `Declined urgent request: ${reason}` : 'Declined urgent request',
-    });
+//     const declinedResponse = await Donation.create({
+//       donorId: req.user.userId,
+//       requestId,
+//       quantity: request.quantity || 1,
+//       status: 'cancelled',
+//       notes: reason ? `Declined urgent request: ${reason}` : 'Declined urgent request',
+//     });
 
-    // Log urgent request decline activity (fire-and-forget)
-    activityService.logActivity(req.user.userId, {
-      type: 'emergency_response',
-      action: 'DECLINE_REQUEST',
-      title: 'Urgent Request Declined',
-      description: `Declined urgent ${request.type} request with ${request.urgency} urgency${reason ? `: ${reason}` : ''}`,
-      referenceId: declinedResponse._id.toString(),
-      referenceType: 'Donation',
-      metadata: {
-        requestType: request.type,
-        urgency: request.urgency,
-        declineReason: reason || 'Not specified',
-        requestId: requestId,
-        declinedAt: new Date()
-      }
-    }).catch((error) => {
-      console.error('Activity log error:', error.message);
-    });
+//     // Log urgent request decline activity (fire-and-forget)
+//     activityService.logActivity(req.user.userId, {
+//       type: 'emergency_response',
+//       action: 'DECLINE_REQUEST',
+//       title: 'Urgent Request Declined',
+//       description: `Declined urgent ${request.type} request with ${request.urgency} urgency${reason ? `: ${reason}` : ''}`,
+//       referenceId: declinedResponse._id.toString(),
+//       referenceType: 'Donation',
+//       metadata: {
+//         requestType: request.type,
+//         urgency: request.urgency,
+//         declineReason: reason || 'Not specified',
+//         requestId: requestId,
+//         declinedAt: new Date()
+//       }
+//     }).catch((error) => {
+//       console.error('Activity log error:', error.message);
+//     });
 
-    return response.success(res, 201, 'Urgent request declined successfully', declinedResponse);
-  } catch (err) { next(err); }
-};
+//     return response.success(res, 201, 'Urgent request declined successfully', declinedResponse);
+//   } catch (err) { next(err); }
+// };
 
 // ─── Donor Settings (Dev 1 Task 5) ─────────────────────────────────────────
 export const getSettings = async (req, res, next) => {
@@ -779,7 +779,9 @@ export const getSettings = async (req, res, next) => {
         language: 'en',
       },
     });
-  } catch (err) { next(err); }
+  } catch (err) { 
+    next(err); 
+  }
 };
 
 export const updateSettings = async (req, res, next) => {

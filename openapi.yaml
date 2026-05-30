@@ -1654,6 +1654,14 @@ paths:
       tags:
         - Donor
       summary: Book a donor appointment with a hospital
+      description: |
+        Books an appointment for an authenticated donor at a hospital.
+
+        **Important notes:**
+        - Donors can only have ONE active appointment per hospital
+        - Concurrent booking attempts are handled atomically to prevent duplicates
+        - Appointment date must be in the future and within hospital's scheduling window
+        - Hospital must be verified and active to accept bookings
       security:
         - bearerAuth: []
       requestBody:
@@ -1687,7 +1695,7 @@ paths:
               notes: Available in the morning.
       responses:
         "201":
-          description: Appointment booked
+          description: Appointment booked successfully
           content:
             application/json:
               example:
@@ -1718,7 +1726,7 @@ paths:
                   notes: First-time donor, available in the morning.
                   donationType: Whole Blood
         "400":
-          description: Invalid appointment payload
+          description: Invalid appointment payload, validation error, or scheduling conflict
         "401":
           description: Missing or invalid JWT
         "403":
@@ -1726,10 +1734,7 @@ paths:
         "404":
           description: Hospital, donor, or request not found
         "409":
-          description: Active appointment already exists for this hospital
-      description: "Demo seed available via `npm run seed-demo`. Base URL example:
-        https://graduation-project-cy61.onrender.com This operation includes a
-        seeded demo request example."
+          description: Active appointment already exists for this hospital (duplicate prevention)
   /donations/book-appointment/available-slots:
     get:
       tags:
@@ -2022,6 +2027,14 @@ paths:
       tags:
         - Donor
       summary: Cancel a donor appointment
+      description: |
+        Cancels a pending or confirmed appointment.
+
+        **Cancellation Requirements:**
+        - Appointment must be in "pending" or "confirmed" status
+        - Cancellation must be requested at least 12 hours BEFORE the appointment
+        - Example: If appointment is on Monday 10:00 AM, must cancel by Sunday 10:00 AM or earlier
+        - Cannot cancel "completed" or already "cancelled" appointments
       security:
         - bearerAuth: []
       parameters:
@@ -2033,7 +2046,7 @@ paths:
           example: 69fe540565ff7785a031315c
       responses:
         "200":
-          description: Appointment cancelled
+          description: Appointment cancelled successfully
           content:
             application/json:
               example:
@@ -2061,16 +2074,13 @@ paths:
                   cancelledAt: 2026-05-09T10:30:00.000Z
                   donationType: Whole Blood
         "400":
-          description: Invalid appointment id
+          description: "Invalid appointment id or cannot cancel (too close to appointment time or already cancelled/completed)"
         "401":
           description: Missing or invalid JWT
         "403":
           description: Role not allowed
         "404":
           description: Appointment not found
-      description: "Demo seed available via `npm run seed-demo`. Base URL example:
-        https://graduation-project-cy61.onrender.com Parameter examples are
-        aligned with the seeded demo dataset where possible."
   /donations/types:
     get:
       tags:

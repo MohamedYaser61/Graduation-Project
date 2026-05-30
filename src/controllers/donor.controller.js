@@ -160,6 +160,9 @@ export const updateProfile = async (req, res, next) => {
 };
 
 // Get matched requests for this donor — supports ?page=1&limit=10
+// Get matching requests for this donor — supports ?page=1&limit=10
+// NOTE: This endpoint duplicates functionality with GET /donor/matches
+// TODO: Consolidate these two endpoints in future refactor
 export const getRequests = async (req, res, next) => {
   try {
     const { offset, limit, page } = parsePagination(req.query);
@@ -194,6 +197,9 @@ export const getRequests = async (req, res, next) => {
 };
 
 // Get matching requests for this donor — supports ?page=1&limit=10
+// NOTE: This endpoint duplicates functionality with GET /donor/requests
+// Kept for backward compatibility - consider using /requests instead
+// TODO: Consolidate these two endpoints in future refactor
 export const getMatches = async (req, res, next) => {
   try {
     const { offset, limit, page } = parsePagination(req.query);
@@ -524,6 +530,19 @@ export const getRecentActivity = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+/**
+ * DEPRECATED & REMOVED (Phase 7 - API Consolidation)
+ * 
+ * The following functions were removed as part of the API consolidation refactor:
+ * - getUrgentRequests() - Use GET /requests/nearby?urgency=critical instead
+ * - getUrgentRequestDetails() - Use GET /requests/{id} instead  
+ * - declineUrgentRequest() - Simply don't respond to requests
+ * 
+ * Urgent requests are now integrated into the main request endpoints.
+ * Keep these implementations commented for reference during migration period.
+ */
+
+/*
 export const getUrgentRequests = async (req, res, next) => {
   try {
     const { page = 1, limit = 20, lat, lng } = req.query;
@@ -633,6 +652,53 @@ export const getUrgentRequestDetails = async (req, res, next) => {
 
 export const declineUrgentRequest = async (req, res, next) => {
   try {
+    const { requestId } = req.params;
+    const { reason } = req.body;
+
+    const request = await Request.findOne({
+      _id: requestId,
+      urgency: { $in: ['high', 'critical'] },
+      status: { $in: ['pending', 'in-progress'] },
+    });
+
+    if (!request) {
+      return response.error(res, 404, 'Urgent request not found');
+    }
+
+    const donor = await Donor.findById(req.user.userId);
+    if (!donor) {
+      return response.error(res, 404, 'Donor not found');
+    }
+
+    const existingResponse = await Donation.findOne({
+      donorId: req.user.userId,
+      requestId,
+    });
+
+    if (existingResponse && existingResponse.status !== 'cancelled') {
+      return response.error(res, 400, 'You have already responded to this request');
+    }
+
+    if (existingResponse && existingResponse.status === 'cancelled') {
+      return response.success(res, 200, 'Urgent request already declined', existingResponse);
+    }
+
+    const declinedResponse = await Donation.create({
+      donorId: req.user.userId,
+      requestId,
+      quantity: request.quantity || 1,
+      status: 'cancelled',
+      notes: reason ? `Declined urgent request: ${reason}` : 'Declined urgent request',
+    });
+
+    // Log urgent request decline activity (fire-and-forget)
+    activityService.logActivity(req.user.userId, {
+      type: 'emergency_response',
+      action: 'DECLINE_REQUEST',
+      title: 'Urgent Request Declined',
+      description: `Declined urgent ${request.type} request with ${request.urgency} urgency${reason ? `: ${reason}` : ''}`,
+*/
+// Function implementations removed - see above
     const { requestId } = req.params;
     const { reason } = req.body;
 

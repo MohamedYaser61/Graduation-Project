@@ -708,6 +708,174 @@ Header: Authorization: Bearer {jwt_token}
 - Analyze endpoint duplication (matches/requests, multiple dashboards)
 - Evaluate redundant mounting patterns
 - Service consolidation opportunities
+# Phase 02A – Donor Flow, Ownership & Cross-Role Logic Audit
+
+This phase is NOT about endpoint inventory. The API inventory is already complete.
+
+The goal of this phase is to perform a deep business-logic audit of every donor-related workflow and determine whether each endpoint is correctly connected to Hospital and Admin responsibilities.
+
+## Objectives
+
+For every Donor endpoint:
+
+1. Analyze the actual controller → service → model flow.
+2. Determine whether the endpoint behavior matches the intended business workflow.
+3. Verify that required relationships with Hospital entities exist and are enforced.
+4. Verify that required relationships with Admin oversight exist and are enforced.
+5. Identify missing validations, ownership checks, authorization checks, and state-transition protections.
+6. Detect dead-end flows where a donor action does not properly propagate to downstream hospital processes.
+7. Detect orphaned logic where hospital/admin actions are expected but never occur.
+
+---
+
+# Required Audit Output Per Endpoint
+
+For every donor endpoint produce:
+
+## Endpoint
+
+Method + Route
+
+## Current Behavior
+
+What the code actually does.
+
+## Expected Business Behavior
+
+What the endpoint should do in a production blood-donation platform.
+
+## Hospital Dependency
+
+- Required
+- Optional
+- None
+
+Explain why.
+
+## Admin Dependency
+
+- Required
+- Optional
+- None
+
+Explain why.
+
+## Ownership Validation
+Verify:
+- donor owns resource
+- donor can only access own data
+- donor cannot manipulate another donor's records
+
+## State Validation
+Verify:
+- allowed states
+- forbidden states
+- missing state checks
+
+## Notifications
+Verify:
+- should notification be created?
+- should notification be updated?
+- should hospital receive notification?
+- should admin receive notification?
+
+## Data Consistency
+Verify:
+- Request updates
+- Donation updates
+- Appointment updates
+- Reward updates
+- Analytics updates
+
+## Issues Found
+
+List every issue.
+
+## Recommended Fix
+
+Provide exact correction.
+
+# Endpoints To Audit First
+
+Audit all donor-facing endpoints including but not limited to:
+
+- GET /donor/profile
+- PUT /donor/profile
+- GET /donor/requests
+- GET /donor/matches
+- POST /donor/respond/:requestId
+- GET /donor/history
+- GET /donor/dashboard
+- GET /donor/recent-activity
+- GET /donor/rewards
+- GET /donor/notifications
+- PUT /donor/participation
+- PUT /donor/availability
+
+Also audit any donor-related endpoints exposed through:
+
+- /requests
+- /appointments
+- /donations
+- /rewards
+- /notifications
+- /analytics
+
+if they are callable by donor users.
+
+---
+
+# Cross-Role Flow Audit
+
+Trace the complete lifecycle:
+
+Hospital Creates Request
+→ Matching Engine
+→ Donor Sees Request
+→ Donor Responds
+→ Donation Record Created
+→ Appointment Created
+→ Hospital Receives Update
+→ Donation Completed
+→ Rewards Granted
+→ Analytics Updated
+→ Request Closed
+
+For every step verify:
+
+- Data created
+- Data updated
+- Notifications sent
+- Permissions enforced
+- State transitions valid
+
+Document any missing link in the chain.
+
+---
+
+# Deliverables
+
+Produce a report named:
+
+PHASE_02A_DONOR_FLOW_AUDIT.md
+
+The report must include:
+
+1. Endpoint-by-endpoint audit.
+2. Cross-role dependency matrix.
+3. Donor ↔ Hospital interaction matrix.
+4. Donor ↔ Admin interaction matrix.
+5. Missing ownership checks.
+6. Missing authorization checks.
+7. Missing notifications.
+8. Broken workflow links.
+9. Logic inconsistencies.
+10. Prioritized fix list (Critical / High / Medium / Low).
+
+Do not modify code during this phase.
+
+Audit only.
+Evidence-based findings only.
 
 **Phase 03 - Flow Audit:**
 - Trace request/donation/appointment state transitions

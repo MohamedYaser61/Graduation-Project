@@ -133,14 +133,20 @@ export const register = async (req, res, next) => {
     // Strip location.lastUpdated if present
     if (safeUser.location) { delete safeUser.location.lastUpdated; }
 
-    response.success(res, 201, 'User registered successfully', {
+    const responseData = {
       user: safeUser,
       tokens: {
         accessToken: result.accessToken,
         refreshToken: result.refreshToken,
       },
       locationRequired,
-    });
+    };
+
+    if (process.env.NODE_ENV !== 'production') {
+      responseData.verificationToken = result.verificationOtp;
+    }
+
+    response.success(res, 201, 'User registered successfully', responseData);
   } catch (error) {
     // Treat validation/business errors as 400; unexpected errors go to middleware
     if (error.message?.startsWith('Validation failed') || !error.statusCode) {

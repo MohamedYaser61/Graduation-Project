@@ -439,6 +439,7 @@ export const register = async (data, trace = {}) => {
       accessToken: authPayload.accessToken,
       refreshToken: authPayload.refreshToken,
       verificationEmail,
+      verificationOtp,
     };
 };
 

@@ -99,11 +99,12 @@ async function main() {
   const signup = await callApiWith429Retry('/auth/signup', {
     method: 'POST',
     body: {
-      fullName: 'E2E Donor',
+      fullName: 'Eee Donor',
       email: testEmail,
       password: TEST_PASSWORD,
+      confirmPassword: TEST_PASSWORD,
       role: 'donor',
-      phoneNumber: '1234567890',
+      phoneNumber: '01234567890',
       dateOfBirth: '1990-05-15',
       gender: 'female',
       bloodType: 'O+',

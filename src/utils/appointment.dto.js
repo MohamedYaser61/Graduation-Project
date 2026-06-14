@@ -276,6 +276,23 @@ export const toAppointmentResponse = (appointment, options = {}) => {
     };
   }
 
+  if (options?.isReschedule) {
+    return {
+      _id: src._id,
+      appointmentId: src._id,
+      // Date-only format is the contract for this response shape (Flutter expectation).
+      // The time component is separately expressed in appointmentTime.
+      appointmentDate: src.appointmentDate ? new Date(src.appointmentDate).toISOString().split('T')[0] : null,
+      appointmentTime: confirmation?.appointmentTime || formatAppointmentTime(src.appointmentDate),
+      status: src.status || null,
+      donationType: confirmation?.donationType || src.donationType || null,
+      rescheduleHistory: src.rescheduleHistory || [],
+      donor: confirmation?.donor || null,
+      hospital: confirmation?.hospital || null,
+      hospitalId: confirmation?.hospitalId || null,
+    };
+  }
+
   const isDonorAudience = options?.role === 'donor' || options?.audience === 'donor';
 
   if (isDonorAudience) {
@@ -283,7 +300,7 @@ export const toAppointmentResponse = (appointment, options = {}) => {
     return {
       _id: src._id,
       appointmentId: src._id,
-      appointmentDate: src.appointmentDate || null,
+      appointmentDate: src.appointmentDate ? new Date(src.appointmentDate).toISOString().split('T')[0] : null,
       appointmentTime: confirmation?.appointmentTime || formatAppointmentTime(src.appointmentDate),
       status: src.status || null,
       donationType: confirmation?.donationType || src.donationType || null,

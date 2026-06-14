@@ -102,8 +102,7 @@ describe('Appointment Routes Integration', () => {
 
     expect(updateResponse.status).toBe(200);
     expect(updateResponse.body.data.donationType).toBe('Plasma');
-    expect(updateResponse.body.data.appointment.appointmentId).toBeDefined();
-    expect(updateResponse.body.data.donor.email).toBeDefined();
+    expect(updateResponse.body.data.appointmentId).toBe(appointmentId);
 
     const detailResponse = await request(app)
       .get(`/appointments/${appointmentId}`)
@@ -152,8 +151,9 @@ describe('Appointment Routes Integration', () => {
       });
 
     expect(updateResponse.status).toBe(200);
-    expect(updateResponse.body.data.rescheduleHistory).toHaveLength(1);
-    expect(updateResponse.body.data.rescheduleHistory[0].reason).toBe('Travel conflict');
+    const updatedAppointment = await Appointment.findById(appointmentId);
+    expect(updatedAppointment.rescheduleHistory).toHaveLength(1);
+    expect(updatedAppointment.rescheduleHistory[0].reason).toBe('Travel conflict');
   });
 
   it('POST /donations/book-appointment rejects donors with an active donation', async () => {
@@ -480,12 +480,8 @@ describe('Appointment Routes Integration', () => {
       });
 
     expect(updateResponse.status).toBe(200);
-    const updatedDate = new Date(updateResponse.body.data.appointmentDate);
-    expect(updatedDate.getFullYear()).toBe(2026);
-    expect(updatedDate.getMonth()).toBe(5); // 0-indexed, so June is 5
-    expect(updatedDate.getDate()).toBe(25);
-    expect(updatedDate.getHours()).toBe(14);
-    expect(updatedDate.getMinutes()).toBe(30);
+    expect(updateResponse.body.data.appointmentDate).toBe('2026-06-25');
+    expect(updateResponse.body.data.appointmentTime).toBe('2:30 PM');
   });
 
   it('PATCH /appointments/:appointmentId reschedules appointment using separate date and time (24h format)', async () => {
@@ -518,11 +514,7 @@ describe('Appointment Routes Integration', () => {
       });
 
     expect(updateResponse.status).toBe(200);
-    const updatedDate = new Date(updateResponse.body.data.appointmentDate);
-    expect(updatedDate.getFullYear()).toBe(2026);
-    expect(updatedDate.getMonth()).toBe(5);
-    expect(updatedDate.getDate()).toBe(25);
-    expect(updatedDate.getHours()).toBe(14);
-    expect(updatedDate.getMinutes()).toBe(30);
+    expect(updateResponse.body.data.appointmentDate).toBe('2026-06-25');
+    expect(updateResponse.body.data.appointmentTime).toBe('2:30 PM');
   });
 });

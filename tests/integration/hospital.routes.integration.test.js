@@ -632,7 +632,7 @@ describe('POST /hospital/requests/create-emergency', () => {
     expect(res.body.data.isEmergency).toBe(true);
     expect(res.body.data.urgency).toBe('critical');
     expect(res.body.data.unitsNeeded).toBe(2);
-    expect(res.body.data.patientType).toBe('emergency');
+    expect(res.body.data.patientType).toBe('adult');
     expect(String(res.body.data.hospitalId._id || res.body.data.hospitalId)).toBe(hospital._id.toString());
 
     const stored = await Request.findById(res.body.data._id).populate('hospitalId', 'hospitalName phone');
@@ -887,7 +887,7 @@ describe('PUT /hospital/requests/:requestId', () => {
         unitsNeeded: 3,
         urgency: 'high',
         requiredBy: newRequiredBy,
-        patientType: 'general',
+        patientType: 'adult',
         contactNumber: '01011112222',
         notes: 'Updated patient notes',
       });
@@ -903,7 +903,7 @@ describe('PUT /hospital/requests/:requestId', () => {
     expect(updatedDoc.bloodType).toEqual(['A-', 'O-']);
     expect(updatedDoc.unitsNeeded).toBe(3);
     expect(updatedDoc.urgency).toBe('high');
-    expect(updatedDoc.patientType).toBe('general');
+    expect(updatedDoc.patientType).toBe('adult');
     expect(updatedDoc.contactNumber).toBe('01011112222');
     expect(updatedDoc.notes).toBe('Updated patient notes');
   });

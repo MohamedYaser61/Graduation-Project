@@ -1,20 +1,7 @@
 export const PATIENT_TYPE_ENUM = [
-  'surgery',
-  'cardiac_surgery',
-  'accident',
-  'burns',
-  'cancer',
-  'leukemia',
-  'maternity',
-  'chronic_illness',
-  'hemophilia',
-  'thalassemia',
-  'dialysis',
-  'gastrointestinal_bleeding',
-  'organ_transplant',
-  'pediatric',
-  'emergency',
-  'general',
+  'adult',
+  'child',
+  'infant',
 ];
 
 export const REQUEST_URGENCY_ENUM = [

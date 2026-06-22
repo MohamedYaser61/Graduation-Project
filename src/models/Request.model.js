@@ -40,7 +40,7 @@ const requestSchema = new mongoose.Schema(
         values: PATIENT_TYPE_ENUM,
         message: `Patient type must be one of: ${PATIENT_TYPE_ENUM.join(', ')}`,
       },
-      default: 'general',
+      default: 'adult',
     },
 
     unitsNeeded: {

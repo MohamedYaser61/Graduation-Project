@@ -4854,22 +4854,10 @@ paths:
                 patientType:
                   type: string
                   enum:
-                    - surgery
-                    - cardiac_surgery
-                    - accident
-                    - burns
-                    - cancer
-                    - leukemia
-                    - maternity
-                    - chronic_illness
-                    - hemophilia
-                    - thalassemia
-                    - dialysis
-                    - gastrointestinal_bleeding
-                    - organ_transplant
-                    - pediatric
-                    - emergency
-                    - general
+                    - adult
+                    - child
+                    - infant
+                  description: Age category of the patient
                   example: adult
                 contactNumber:
                   type: string
@@ -4890,7 +4878,7 @@ paths:
               requiredBy: 2026-05-12T10:00:00.000Z
               quantity: 3
               unitsNeeded: 3
-              patientType: general
+              patientType: adult
               contactNumber: "01099998888"
               isEmergency: true
               patientDetails: Emergency surgery support
@@ -4924,7 +4912,7 @@ paths:
                   unitsNeeded: 3
                   unitsRequested: 3
                   isFulfilled: false
-                  patientType: general
+                  patientType: adult
                   isEmergency: true
                   notes: Emergency surgery support
         "400":
@@ -5334,7 +5322,7 @@ paths:
               urgency: high
               unitsNeeded: 3
               requiredBy: "2026-06-20T14:30:00.000Z"
-              patientType: general
+              patientType: adult
               contactNumber: "01099998888"
               patientDetails: Patient needs whole blood transfusion
       responses:

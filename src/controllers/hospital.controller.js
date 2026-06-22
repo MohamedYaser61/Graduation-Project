@@ -1,4 +1,5 @@
 import response from '../utils/response.js';
+import { PATIENT_TYPE_ENUM } from '../constants/request.constants.js';
 import mongoose from 'mongoose';
 import Hospital from '../models/Hospital.model.js';
 import Donor from '../models/Donor.model.js';
@@ -85,7 +86,7 @@ const buildEmergencyRequestData = (userId, hospital, validation) => ({
   urgency: 'critical',
   requiredBy: new Date(Date.now() + EMERGENCY_REQUEST_REQUIRED_BY_MS),
   unitsNeeded: validation.unitsNeeded,
-  patientType: validation.patientDetails,
+  patientType: 'adult',
   isEmergency: true,
   notes: validation.patientDetails,
   bloodType: validation.bloodTypes,
@@ -1002,6 +1003,9 @@ export const updateRequest = asyncHandler(async (req, res) => {
     }
 
     if (patientType !== undefined) {
+      if (!PATIENT_TYPE_ENUM.includes(patientType)) {
+        throw new HttpError(400, `patientType must be one of: ${PATIENT_TYPE_ENUM.join(', ')}`);
+      }
       request.patientType = patientType;
     }
 

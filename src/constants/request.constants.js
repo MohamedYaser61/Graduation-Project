@@ -4,6 +4,25 @@ export const PATIENT_TYPE_ENUM = [
   'infant',
 ];
 
+export const PATIENT_DETAILS_ENUM = [
+  'surgery',
+  'cardiac_surgery',
+  'accident',
+  'burns',
+  'cancer',
+  'leukemia',
+  'maternity',
+  'chronic_illness',
+  'hemophilia',
+  'thalassemia',
+  'dialysis',
+  'gastrointestinal_bleeding',
+  'organ_transplant',
+  'pediatric',
+  'emergency',
+  'general',
+];
+
 export const REQUEST_URGENCY_ENUM = [
   'low',
   'medium',

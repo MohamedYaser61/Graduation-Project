@@ -488,6 +488,7 @@ describe('Request Details Integration', () => {
     // Anchor to 25 h from now to satisfy the "at least 24 hours" rule regardless
     // of what time of day the test runs, then skip forward if that lands on Sunday.
     const bookDate = new Date(Date.now() + 25 * 60 * 60 * 1000);
+    if (bookDate.getHours() < 9 || bookDate.getHours() >= 17) bookDate.setHours(10, 0, 0, 0);
     if (bookDate.getDay() === 0) bookDate.setDate(bookDate.getDate() + 1);
     const bookResponse = await request(app)
       .post('/donations/book-appointment')
@@ -515,6 +516,7 @@ describe('Request Details Integration', () => {
 
     // Reschedule to 26 h from now (different slot, still > 24 h, skips Sunday)
     const rescheduleDate = new Date(Date.now() + 26 * 60 * 60 * 1000);
+    if (rescheduleDate.getHours() < 9 || rescheduleDate.getHours() >= 17) rescheduleDate.setHours(11, 0, 0, 0);
     if (rescheduleDate.getDay() === 0) rescheduleDate.setDate(rescheduleDate.getDate() + 1);
     const rescheduleResponse = await request(app)
       .patch(`/donations/book-appointment/${bookResponse.body.data._id}`)
@@ -564,6 +566,7 @@ describe('Request Details Integration', () => {
     // Anchor to 25 h from now to satisfy the "at least 24 hours" rule regardless
     // of what time of day the test runs, then skip forward if that lands on Sunday.
     const bookDate = new Date(Date.now() + 25 * 60 * 60 * 1000);
+    if (bookDate.getHours() < 9 || bookDate.getHours() >= 17) bookDate.setHours(10, 0, 0, 0);
     if (bookDate.getDay() === 0) bookDate.setDate(bookDate.getDate() + 1);
     const bookResponse = await request(app)
       .post('/donations/book-appointment')

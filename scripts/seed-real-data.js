@@ -11,6 +11,7 @@
 import mongoose from 'mongoose';
 import { validateEnv } from '../src/config/env.js';
 import { connectDB, disconnectDB } from '../src/config/db.js';
+import { encryptAdminKey } from '../src/utils/admin-key-crypto.js';
 import User from '../src/models/User.model.js';
 import Donor from '../src/models/Donor.model.js';
 import Hospital from '../src/models/Hospital.model.js';
@@ -178,31 +179,41 @@ async function ensureUser(model, payload) {
     ? { ...payload, name: payload.hospitalName }
     : payload;
 
-  const existingBase = await User.findOne({ email: normalizedPayload.email }).select('+password +adminKey');
+  const { adminKey: plaintextKey, ...userPayload } = normalizedPayload;
 
-  if (existingBase && existingBase.role !== normalizedPayload.role) {
-    throw new Error(`Existing user role mismatch for ${normalizedPayload.email}`);
+  const existingBase = await User.findOne({ email: userPayload.email }).select('+password +adminKey');
+
+  if (existingBase && existingBase.role !== userPayload.role) {
+    throw new Error(`Existing user role mismatch for ${userPayload.email}`);
   }
 
+  let user;
   if (!existingBase) {
-    return model.create({
-      ...normalizedPayload,
+    user = await model.create({
+      ...userPayload,
       isEmailVerified: true,
       emailVerifiedAt: now,
       isSuspended: false,
       deletedAt: null,
     });
+  } else {
+    user = await model.findById(existingBase._id).select('+password +adminKey');
+    Object.entries(userPayload).forEach(([key, value]) => {
+      user[key] = value;
+    });
+    user.isEmailVerified = true;
+    user.emailVerifiedAt = now;
+    user.deletedAt = null;
+    await user.save();
+    user = await model.findById(existingBase._id).select('+adminKey');
   }
 
-  const doc = await model.findById(existingBase._id).select('+password +adminKey');
-  Object.entries(normalizedPayload).forEach(([key, value]) => {
-    doc[key] = value;
-  });
-  doc.isEmailVerified = true;
-  doc.emailVerifiedAt = now;
-  doc.deletedAt = null;
-  await doc.save();
-  return doc;
+  if (plaintextKey) {
+    user.adminKey = encryptAdminKey(plaintextKey, user._id.toString());
+    await user.save({ validateBeforeSave: false });
+  }
+
+  return user;
 }
 
 async function ensureRequest(filter, data) {

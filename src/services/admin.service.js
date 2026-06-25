@@ -46,7 +46,7 @@ export const getAuditLogs = async (filters = {}, pagination = {}) => {
 
   const query = {};
   if (action) query.action = action;
-  if (targetType) query.targetType = targetType;
+  if (targetType) query.targetType = targetType.charAt(0).toUpperCase() + targetType.slice(1).toLowerCase();
   if (adminId) query.adminId = adminId;
 
   const [logs, total] = await Promise.all([
@@ -915,12 +915,16 @@ export const loginAdmin = async (email, password, adminKey) => {
   };
 };
 
+const BCRYPT_PREFIXES = ['$2a$', '$2b$', '$2y$'];
+
+const isBcryptHash = (value) => BCRYPT_PREFIXES.some((prefix) => value.startsWith(prefix));
+
 const attachAdminKey = (admin) => {
   const obj = admin.toObject ? admin.toObject() : { ...admin };
   if (isEncryptedKey(String(obj.adminKey || ''))) {
     obj.adminKey = decryptAdminKey(obj.adminKey, String(obj._id));
-  } else {
-    delete obj.adminKey;
+  } else if (obj.adminKey && isBcryptHash(String(obj.adminKey))) {
+    obj.adminKey = null;
   }
   return obj;
 };
